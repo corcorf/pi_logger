@@ -15,8 +15,6 @@ from sqlalchemy.orm import sessionmaker
 
 from local_db import LocalData, ENGINE
 
-logging.basicConfig(filename='debug.log', level=logging.INFO)
-
 
 def getserial():
     """
@@ -149,23 +147,31 @@ def save_readings_to_db(data, engine):
     """
     Save data from one of the sensors to the local database
     """
-    data = LocalData(**data)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    session.add(data)
-    session.flush()
-    session.commit()
+    if data is not None:
+        logging.debug("attempting to write data to db")
+        data = LocalData(**data)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        session.add(data)
+        session.flush()
+        session.commit()
+    else:
+        logging.debug("skipping writing of data. data is None")
 
 
 def get_arguments(default_freq=300):
     """
     Get a reading frequency as an argument when the script is run from CLI
     """
+    logging.debug("fetching arguments")
     description = 'Log ambient conditions at a specified frequency.'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('frequency', metavar='freq', type=int,
                         default=default_freq,
                         help='Frequency of readings in seconds')
+    parser.add_argument('--debug', dest='debug', action='store_const',
+                        const=True, default=False,
+                        help='set the logging module to debug mode')
     return parser.parse_args()
 
 
@@ -175,15 +181,21 @@ def add_local_pi_info(data, pi_id, pi_name, location):
     to the pi from which the data was being collected
     Returns a dictionary with the extra information
     """
-    data['location'] = location
-    data['piname'] = pi_name
-    data['piid'] = pi_id
-    return data
+    if data is not None:
+        data['location'] = location
+        data['piname'] = pi_name
+        data['piid'] = pi_id
+        return data
 
 
 if __name__ == "__main__":
     args = get_arguments(default_freq=300)
     freq = args.frequency
+    debug = args.debug
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(filename='debug.log', level=logging.INFO)
     piid = getserial()
     piname = socket.gethostname()
     engine = ENGINE

@@ -1,0 +1,6 @@
+Adafruit_DHT
+bme680
+pandas
+sqlalchemy
+psycopg2-binary
+numpy

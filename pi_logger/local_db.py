@@ -83,4 +83,4 @@ def set_up_database(path, engine):
 
 
 if __name__ == "__main__":
-    set_up_database(LOG_PATH, CONN_STRING)
+    set_up_database(LOG_PATH, ENGINE)
