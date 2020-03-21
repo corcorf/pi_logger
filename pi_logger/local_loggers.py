@@ -193,7 +193,7 @@ if __name__ == "__main__":
     freq = args.frequency
     debug = args.debug
     if debug:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(filename='debug.log', level=logging.DEBUG)
     else:
         logging.basicConfig(filename='debug.log', level=logging.INFO)
     piid = getserial()

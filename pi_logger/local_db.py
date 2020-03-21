@@ -10,7 +10,7 @@ from sqlalchemy.inspection import inspect
 import psycopg2
 
 BASE = declarative_base()
-LOG_PATH = os.path.join(os.sep, "home", "pi", "logs")
+LOG_PATH = os.path.join(os.path.expanduser("~"), "logs")
 if not os.path.exists(LOG_PATH):
     os.mkdir(LOG_PATH)
 DB_PATH = os.path.join(LOG_PATH, "locallogs.db")
@@ -24,11 +24,11 @@ class LocalData(BASE):
     Class for sensor data table in local SQLite DB
     _______
     columns:
+        id (Integer)
         datetime (DateTime)
         location (String)
         piname (string)
         piid (string)
-        pin (Integer)
         temp (Float)
         humidity (Float)
         pressure (Float)
@@ -36,15 +36,17 @@ class LocalData(BASE):
     """
     __tablename__ = 'localdata'
 
-    datetime = Column(DateTime, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    datetime = Column(DateTime)
     location = Column(String)
     piname = Column(String)
-    piid = Column(String, primary_key=True)
-    pin = Column(Integer, primary_key=True)
+    piid = Column(String)
     temp = Column(Float)
     humidity = Column(Float)
     pressure = Column(Float)
     gasvoc = Column(Float)
+
+    sqlite_autoincrement = True
 
     def __repr__(self):
         info = (self.piname, self.location, self.datetime)
