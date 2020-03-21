@@ -10,7 +10,9 @@ from sqlalchemy.inspection import inspect
 import psycopg2
 
 BASE = declarative_base()
-LOG_PATH = os.path.join("home", "pi", "logs")
+LOG_PATH = os.path.join(os.sep, "home", "pi", "logs")
+if not os.path.exists(LOG_PATH):
+    os.mkdir(LOG_PATH)
 DB_PATH = os.path.join(LOG_PATH, "locallogs.db")
 CONN_STRING = 'sqlite:///{}'.format(DB_PATH)
 ENGINE = create_engine(CONN_STRING, echo=False)

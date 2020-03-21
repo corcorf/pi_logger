@@ -39,7 +39,7 @@ def getserial():
     return cpuserial
 
 
-def read_config(pi_name, path='/home/pi/logger_scripts/logger_config.csv'):
+def read_config(pi_name, path='../logger_config.csv'):
     """
     Read local config file from path to determine which loggers should be set
     up
