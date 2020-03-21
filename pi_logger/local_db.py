@@ -49,25 +49,25 @@ class LocalData(BASE):
         return "<LocalData(pi={}, sensor={}, datetime={})>".format(*info)
 
 
-class LocalSensors(BASE):
-    """
-    Class for sensors table in local SQLite DB
-    _______
-    columns:
-        piname (String)
-        piid (String)
-        sensorname (String)
-        pin (Integer)
-    """
-    __tablename__ = 'localsensors'
-    piname = Column(String)
-    piid = Column(String)
-    sensorname = Column(String)
-    pin = Column(Integer)
-
-    def __repr__(self):
-        info = (self.piname, self.location, self.pin)
-        return "<LocalSensor(pi={}, sensor={}, pin={})>".format(*info)
+# class LocalSensors(BASE):
+#     """
+#     Class for sensors table in local SQLite DB
+#     _______
+#     columns:
+#         piname (String)
+#         piid (String)
+#         sensorname (String)
+#         pin (Integer)
+#     """
+#     __tablename__ = 'localsensors'
+#     piname = Column(String)
+#     piid = Column(String)
+#     sensorname = Column(String)
+#     pin = Column(Integer)
+#
+#     def __repr__(self):
+#         info = (self.piname, self.location, self.pin)
+#         return "<LocalSensor(pi={}, sensor={}, pin={})>".format(*info)
 
 
 def set_up_database(path, engine):
