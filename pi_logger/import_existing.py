@@ -26,7 +26,7 @@ def load_existing_data_to_db(existing_log=None,
         log_path = os.path.join(os.path.expanduser("~"), "logs")
         if not os.path.exists(log_path):
             os.mkdir(log_path)
-            db_path = os.path.join(log_path, "locallogs.db")
+        db_path = os.path.join(log_path, "locallogs.db")
 
     logging.debug(f"reading existing log from {existing_log}")
     data = pd.read_csv(existing_log)
