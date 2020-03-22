@@ -205,20 +205,22 @@ if __name__ == "__main__":
 
     sensors = read_config(pi_name=piname,
                           path='../logger_config.csv')
-    dht_list = sensors["dht22"]
-    bme_list = sensors["bme680"]
-    dht_sensor = set_up_dht22_sensors()
-    bme680_sensor = set_up_bme680_sensors()
+    dht_df = sensors["dht22"]
+    if dht_df:
+        dht_sensor = set_up_dht22_sensors()
+    bme_df = sensors["bme680"]
+    if bme_df:
+        bme680_sensor = set_up_bme680_sensors()
 
     while True:
         new_data = list()
-        for location, details in dht_list.iterrows():
+        for location, details in dht_df.iterrows():
             dht_pin = int(details.pin1)
             data = poll_dht22(dht_sensor, dht_pin)
             data = add_local_pi_info(data, piid, piname, location)
             save_readings_to_db(data, engine)
 
-        for location, details in bme_list.iterrows():
+        for location, details in bme_df.iterrows():
             bme_pin = int(details.pin1)
             data = poll_bme680(bme680_sensor, bme_pin)
             data = add_local_pi_info(data, piid, piname, location)
