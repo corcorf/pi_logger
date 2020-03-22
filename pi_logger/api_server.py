@@ -5,9 +5,6 @@ https://www.codementor.io/@sagaragarwal94/building-a-basic-restful-api-in-python
 
 from flask import Flask
 from flask_restful import Resource, Api
-# from json import dumps
-# from flask_jsonpify import jsonify
-# import os
 from local_db import LocalData, ENGINE
 import pandas as pd
 from sqlalchemy.orm import sessionmaker

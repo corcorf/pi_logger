@@ -1,7 +1,9 @@
 Adafruit_DHT
 bme680
+smbus
 pandas
+numpy
 sqlalchemy
 psycopg2-binary
-numpy
-smbus
+flask
+flask-restful
