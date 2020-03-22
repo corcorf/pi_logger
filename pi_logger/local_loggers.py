@@ -240,7 +240,8 @@ if __name__ == "__main__":
     engine = ENGINE
 
     sensors = read_config(pi_name=PINAME,
-                          path='../logger_config.csv')
+                          path=LOG_PATH,
+                          fn='logger_config.csv')
 
     dht_config = sensors["dht22"]
     if dht_config.size:
