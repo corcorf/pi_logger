@@ -78,14 +78,15 @@ def getserial():
     return cpuserial
 
 
-def read_config(pi_name, path='../logger_config.csv'):
+def read_config(pi_name, path=LOG_PATH, fn='logger_config.csv'):
     """
     Read local config file from path to determine which loggers should be set
     up
     Return dictionary of logger_type: list_of_loggers
     """
     LOG.info("reading local logger config")
-    config = pd.read_csv(path, index_col=0)
+    file_path = os.path.join(path, fn)
+    config = pd.read_csv(file_path, index_col=0)
     config = config[config['pi'] == pi_name]
     dht_sensors = config[config['type'] == 'dht22']
     bme_sensors = config[config['type'] == 'bme680']
