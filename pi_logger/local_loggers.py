@@ -3,6 +3,7 @@
 Log ambient atmospheric conditions at a specified frequency
 """
 
+import os
 import time
 from datetime import datetime
 import Adafruit_DHT
@@ -13,7 +14,10 @@ import socket
 import logging
 from sqlalchemy.orm import sessionmaker
 
-from local_db import LocalData, ENGINE
+from local_db import LocalData, ENGINE, LOG_PATH
+
+PINAME = socket.gethostname()
+LOG = logging.getLogger(f'local_loggers_{PINAME}')
 
 
 def getserial():
@@ -25,6 +29,7 @@ def getserial():
         "0000000000000000" where /proc/cpuinfo missing line beginning "Serial"
         "ERROR000000000" where /proc/cpuinfo does not exist
     """
+    LOG.info("attempting to get cpu serial number")
     cpuserial = "0000000000000000"
     try:
         f = open('/proc/cpuinfo', 'r')
@@ -43,6 +48,7 @@ def read_config(pi_name, path='../logger_config.csv'):
     up
     Return dictionary of logger_type: list_of_loggers
     """
+    LOG.info("reading local logger config")
     config = pd.read_csv(path, index_col=0)
     config = config[config['pi'] == pi_name]
     dht_sensors = config[config['type'] == 'dht22']
@@ -54,7 +60,7 @@ def read_config(pi_name, path='../logger_config.csv'):
         'bme680_loggers: {}'.format(', '.join(bme_sensors.index.tolist())),
     ]
     for m in messages:
-        logging.info(m)
+        LOG.info(m)
 
     return sensors
 
@@ -63,6 +69,7 @@ def set_up_dht22_sensors():
     """
     Return an instance of the DHT22 sensor class
     """
+    LOG.info("setting up dht22 sensor")
     return Adafruit_DHT.DHT22
 
 
@@ -70,6 +77,7 @@ def set_up_bme680_sensors():
     """
     Return an instance of the BME680 sensor class
     """
+    LOG.info("setting up bme680 sensor")
     try:
         sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
     except IOError:
@@ -91,7 +99,7 @@ def pause_to_make_times_nice(frequency):
     nicely with the hour
     """
     if frequency >= 60 and frequency % 60 == 0:
-        print('waiting to start readings')
+        LOG.info('waiting to start readings')
         while time.localtime().tm_min % (frequency // 60) != 0:
             print(time.localtime().tm_min)
 
@@ -102,18 +110,19 @@ def poll_dht22(sensor, pin):
     """
     time = datetime.now()
     time_string = time.strftime("%Y-%m-%d %H:%M:%S")
-    logging.info(f'{time_string} polling DHT22 sensor on pin {pin}')
+    LOG.info(f'{time_string} polling DHT22 sensor on pin {pin}')
     humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
     if humidity is not None and temperature is not None:
         data = dict(
                 datetime=time,
+                sensortype="dht22",
                 temp=temperature,
                 humidity=humidity,
             )
         return data
     else:
         message = '{} failed to retrieve data from DHT22 sensor at pin {}'
-        logging.info(message.format(time_string, pin))
+        LOG.info(message.format(time_string, pin))
 
 
 def poll_bme680(sensor, pin):
@@ -122,7 +131,7 @@ def poll_bme680(sensor, pin):
     """
     time = datetime.now()
     time_string = time.strftime("%Y-%m-%d %H:%M:%S")
-    logging.info(f'{time_string} polling BME680 sensor on pin {pin}')
+    LOG.info(f'{time_string} polling BME680 sensor on pin {pin}')
     if sensor.get_sensor_data():
         if sensor.data.heat_stable:
             airquality = sensor.data.gas_resistance
@@ -130,6 +139,7 @@ def poll_bme680(sensor, pin):
             airquality = None
         data = dict(
             datetime=time,
+            sensortype="bme680",
             temp=sensor.data.temperature,
             humidity=sensor.data.humidity,
             pressure=sensor.data.pressure,
@@ -138,7 +148,7 @@ def poll_bme680(sensor, pin):
         return data
     else:
         message = '{} failed to retrieve data from BME680 sensor at pin {}'
-        logging.info(message.format(time_string, pin))
+        LOG.info(message.format(time_string, pin))
 
 
 def save_readings_to_db(data, engine):
@@ -146,7 +156,7 @@ def save_readings_to_db(data, engine):
     Save data from one of the sensors to the local database
     """
     if data is not None:
-        logging.debug("attempting to write data to db")
+        LOG.debug("attempting to write data to db")
         data = LocalData(**data)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -154,14 +164,14 @@ def save_readings_to_db(data, engine):
         session.flush()
         session.commit()
     else:
-        logging.debug("skipping writing of data. data is None")
+        LOG.debug("skipping writing of data. data is None")
 
 
 def get_arguments(default_freq=300):
     """
     Get a reading frequency as an argument when the script is run from CLI
     """
-    logging.debug("fetching arguments")
+    LOG.debug("fetching arguments")
     description = 'Log ambient conditions at a specified frequency.'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('frequency', metavar='freq', type=int,
@@ -186,22 +196,37 @@ def add_local_pi_info(data, pi_id, pi_name, location):
         return data
 
 
+def set_up_python_logging(pi_name, debug=False,
+                          log_filename="local_loggers.log",
+                          log_path=LOG_PATH):
+    """
+    Set up the python logging module
+    """
+    log_filename = os.path.join(log_path, log_filename)
+    handler = logging.FileHandler(log_filename, mode='a')
+    fmt = '%(asctime)s %(message)s'
+    datefmt = '%Y/%m/%d %H:%M:%S'
+    handler.setFormatter(logging.Formatter(fmt, datefmt=datefmt))
+    LOG.addHandler(handler)
+    if debug:
+        # logging.basicConfig(filename=filename, level=logging.DEBUG)
+        LOG.setLevel(logging.DEBUG)
+    else:
+        # logging.basicConfig(filename=filename, level=logging.INFO)
+        LOG.setLevel(logging.INFO)
+
+
 if __name__ == "__main__":
     args = get_arguments(default_freq=300)
     freq = args.frequency
-    debug = args.debug
-    if debug:
-        logging.basicConfig(filename='debug.log', level=logging.DEBUG)
-    else:
-        logging.basicConfig(filename='debug.log', level=logging.INFO)
+    set_up_python_logging(pi_name=PINAME, debug=args.debug)
     piid = getserial()
-    piname = socket.gethostname()
     engine = ENGINE
 
     msg = 'Will log sensors connected to {pi_name} at frequency of {freq}s'
-    logging.info(msg)
+    LOG.info(msg)
 
-    sensors = read_config(pi_name=piname,
+    sensors = read_config(pi_name=PINAME,
                           path='../logger_config.csv')
     dht_df = sensors["dht22"]
     if dht_df.size:
@@ -215,13 +240,13 @@ if __name__ == "__main__":
         for location, details in dht_df.iterrows():
             dht_pin = int(details.pin1)
             data = poll_dht22(dht_sensor, dht_pin)
-            data = add_local_pi_info(data, piid, piname, location)
+            data = add_local_pi_info(data, piid, PINAME, location)
             save_readings_to_db(data, engine)
 
         for location, details in bme_df.iterrows():
             bme_pin = int(details.pin1)
             data = poll_bme680(bme680_sensor, bme_pin)
-            data = add_local_pi_info(data, piid, piname, location)
+            data = add_local_pi_info(data, piid, PINAME, location)
             save_readings_to_db(data, engine)
 
         time.sleep(freq)

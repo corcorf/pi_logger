@@ -13,10 +13,10 @@ BASE = declarative_base()
 LOG_PATH = os.path.join(os.path.expanduser("~"), "logs")
 if not os.path.exists(LOG_PATH):
     os.mkdir(LOG_PATH)
-DB_PATH = os.path.join(LOG_PATH, "locallogs.db")
-CONN_STRING = 'sqlite:///{}'.format(DB_PATH)
-ENGINE = create_engine(CONN_STRING, echo=False)
-SESSION = sessionmaker(bind=ENGINE)
+    DB_PATH = os.path.join(LOG_PATH, "locallogs.db")
+    CONN_STRING = 'sqlite:///{}'.format(DB_PATH)
+    ENGINE = create_engine(CONN_STRING, echo=False)
+    SESSION = sessionmaker(bind=ENGINE)
 
 
 class LocalData(BASE):
@@ -27,6 +27,7 @@ class LocalData(BASE):
         id (Integer)
         datetime (DateTime)
         location (String)
+        sensortype (String)
         piname (string)
         piid (string)
         temp (Float)
@@ -39,6 +40,7 @@ class LocalData(BASE):
     id = Column(Integer, primary_key=True)
     datetime = Column(DateTime)
     location = Column(String)
+    sensortype = Column(String)
     piname = Column(String)
     piid = Column(String)
     temp = Column(Float)
