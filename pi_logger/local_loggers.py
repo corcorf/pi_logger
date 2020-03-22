@@ -20,6 +20,42 @@ PINAME = socket.gethostname()
 LOG = logging.getLogger(f'local_loggers_{PINAME}')
 
 
+def set_up_python_logging(pi_name, debug=False,
+                          log_filename="local_loggers.log",
+                          log_path=LOG_PATH):
+    """
+    Set up the python logging module
+    """
+    log_filename = os.path.join(log_path, log_filename)
+    handler = logging.FileHandler(log_filename, mode='a')
+    fmt = '%(asctime)s %(message)s'
+    datefmt = '%Y/%m/%d %H:%M:%S'
+    handler.setFormatter(logging.Formatter(fmt, datefmt=datefmt))
+    LOG.addHandler(handler)
+    if debug:
+        # logging.basicConfig(filename=filename, level=logging.DEBUG)
+        LOG.setLevel(logging.DEBUG)
+    else:
+        # logging.basicConfig(filename=filename, level=logging.INFO)
+        LOG.setLevel(logging.INFO)
+
+
+def get_arguments():
+    """
+    Get a reading frequency as an argument when the script is run from CLI
+    """
+    LOG.debug("fetching arguments")
+    description = 'Log ambient conditions at a specified frequency.'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("--freq", dest='frequency', type=int, nargs='?',
+                        default=None, const=300,
+                        help='Frequency of readings in seconds')
+    parser.add_argument('--debug', dest='debug', action='store_const',
+                        const=True, default=False,
+                        help='set the logging module to debug mode')
+    return parser.parse_args()
+
+
 def getserial():
     """
     Extract serial from cpuinfo file and return as string
@@ -93,17 +129,6 @@ def set_up_bme680_sensors():
     return sensor
 
 
-def pause_to_make_times_nice(frequency):
-    """
-    Sleep before taking the first reading so that the reading times line up
-    nicely with the hour
-    """
-    if frequency >= 60 and frequency % 60 == 0:
-        LOG.info('waiting to start readings')
-        while time.localtime().tm_min % (frequency // 60) != 0:
-            print(time.localtime().tm_min)
-
-
 def poll_dht22(sensor, pin):
     """
     Get a reading from a DHT22 sensor and return data as a dictionary
@@ -167,22 +192,6 @@ def save_readings_to_db(data, engine):
         LOG.debug("skipping writing of data. data is None")
 
 
-def get_arguments(default_freq=300):
-    """
-    Get a reading frequency as an argument when the script is run from CLI
-    """
-    LOG.debug("fetching arguments")
-    description = 'Log ambient conditions at a specified frequency.'
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('frequency', metavar='freq', type=int,
-                        default=default_freq,
-                        help='Frequency of readings in seconds')
-    parser.add_argument('--debug', dest='debug', action='store_const',
-                        const=True, default=False,
-                        help='set the logging module to debug mode')
-    return parser.parse_args()
-
-
 def add_local_pi_info(data, pi_id, pi_name, location):
     """
     Take a dictionary of data read from a sensor and add information relating
@@ -196,57 +205,57 @@ def add_local_pi_info(data, pi_id, pi_name, location):
         return data
 
 
-def set_up_python_logging(pi_name, debug=False,
-                          log_filename="local_loggers.log",
-                          log_path=LOG_PATH):
+def poll_all_dht22(dht_config, dht_sensor, pi_id, pi_name, engine):
     """
-    Set up the python logging module
+    Poll all dht22 sensors listed in the config file for this pi
+    Save resulting records to the database specified engine
     """
-    log_filename = os.path.join(log_path, log_filename)
-    handler = logging.FileHandler(log_filename, mode='a')
-    fmt = '%(asctime)s %(message)s'
-    datefmt = '%Y/%m/%d %H:%M:%S'
-    handler.setFormatter(logging.Formatter(fmt, datefmt=datefmt))
-    LOG.addHandler(handler)
-    if debug:
-        # logging.basicConfig(filename=filename, level=logging.DEBUG)
-        LOG.setLevel(logging.DEBUG)
-    else:
-        # logging.basicConfig(filename=filename, level=logging.INFO)
-        LOG.setLevel(logging.INFO)
+    for location, details in dht_config.iterrows():
+        dht_pin = int(details.pin1)
+        data = poll_dht22(dht_sensor, dht_pin)
+        data = add_local_pi_info(data, pi_id, pi_name, location)
+        save_readings_to_db(data, engine)
+
+
+def poll_all_bme680(bme_config, bme_sensor, pi_id, pi_name, engine):
+    """
+    Poll all bme680 sensors listed in the config file for this pi
+    Save resulting records to the database specified engine
+    """
+    for location, details in bme_config.iterrows():
+        bme_pin = int(details.pin1)
+        data = poll_bme680(bme_sensor, bme_pin)
+        data = add_local_pi_info(data, pi_id, pi_name, location)
+        save_readings_to_db(data, engine)
 
 
 if __name__ == "__main__":
-    args = get_arguments(default_freq=300)
+    args = get_arguments()
     freq = args.frequency
     set_up_python_logging(pi_name=PINAME, debug=args.debug)
     piid = getserial()
     engine = ENGINE
 
-    msg = 'Will log sensors connected to {pi_name} at frequency of {freq}s'
-    LOG.info(msg)
-
     sensors = read_config(pi_name=PINAME,
                           path='../logger_config.csv')
-    dht_df = sensors["dht22"]
-    if dht_df.size:
+
+    dht_config = sensors["dht22"]
+    if dht_config.size:
         dht_sensor = set_up_dht22_sensors()
-    bme_df = sensors["bme680"]
-    if bme_df.size:
-        bme680_sensor = set_up_bme680_sensors()
 
-    while True:
-        new_data = list()
-        for location, details in dht_df.iterrows():
-            dht_pin = int(details.pin1)
-            data = poll_dht22(dht_sensor, dht_pin)
-            data = add_local_pi_info(data, piid, PINAME, location)
-            save_readings_to_db(data, engine)
+    bme_config = sensors["bme680"]
+    if bme_config.size:
+        bme_sensor = set_up_bme680_sensors()
 
-        for location, details in bme_df.iterrows():
-            bme_pin = int(details.pin1)
-            data = poll_bme680(bme680_sensor, bme_pin)
-            data = add_local_pi_info(data, piid, PINAME, location)
-            save_readings_to_db(data, engine)
-
-        time.sleep(freq)
+    if freq is None:
+        msg = 'Performing one-off logging of sensors connected to {pi_name}'
+        LOG.info(msg)
+        poll_all_dht22(dht_config, dht_sensor, piid, PINAME, engine)
+        poll_all_bme680(bme_config, bme_sensor, piid, PINAME, engine)
+    else:
+        msg = 'Will log sensors connected to {pi_name} at frequency of {freq}s'
+        LOG.info(msg)
+        while True:
+            poll_all_dht22(dht_config, dht_sensor, piid, PINAME, engine)
+            poll_all_bme680(bme_config, bme_sensor, piid, PINAME, engine)
+            time.sleep(freq)
