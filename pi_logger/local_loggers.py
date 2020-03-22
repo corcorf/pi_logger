@@ -210,11 +210,12 @@ def poll_all_dht22(dht_config, dht_sensor, pi_id, pi_name, engine):
     Poll all dht22 sensors listed in the config file for this pi
     Save resulting records to the database specified engine
     """
-    for location, details in dht_config.iterrows():
-        dht_pin = int(details.pin1)
-        data = poll_dht22(dht_sensor, dht_pin)
-        data = add_local_pi_info(data, pi_id, pi_name, location)
-        save_readings_to_db(data, engine)
+    if dht_sensor is not None:
+        for location, details in dht_config.iterrows():
+            dht_pin = int(details.pin1)
+            data = poll_dht22(dht_sensor, dht_pin)
+            data = add_local_pi_info(data, pi_id, pi_name, location)
+            save_readings_to_db(data, engine)
 
 
 def poll_all_bme680(bme_config, bme_sensor, pi_id, pi_name, engine):
@@ -222,11 +223,12 @@ def poll_all_bme680(bme_config, bme_sensor, pi_id, pi_name, engine):
     Poll all bme680 sensors listed in the config file for this pi
     Save resulting records to the database specified engine
     """
-    for location, details in bme_config.iterrows():
-        bme_pin = int(details.pin1)
-        data = poll_bme680(bme_sensor, bme_pin)
-        data = add_local_pi_info(data, pi_id, pi_name, location)
-        save_readings_to_db(data, engine)
+    if bme_sensor is not None:
+        for location, details in bme_config.iterrows():
+            bme_pin = int(details.pin1)
+            data = poll_bme680(bme_sensor, bme_pin)
+            data = add_local_pi_info(data, pi_id, pi_name, location)
+            save_readings_to_db(data, engine)
 
 
 if __name__ == "__main__":
@@ -242,10 +244,14 @@ if __name__ == "__main__":
     dht_config = sensors["dht22"]
     if dht_config.size:
         dht_sensor = set_up_dht22_sensors()
+    else:
+        dht_sensor = None
 
     bme_config = sensors["bme680"]
     if bme_config.size:
         bme_sensor = set_up_bme680_sensors()
+    else:
+        bme_sensor = None
 
     if freq is None:
         msg = 'Performing one-off logging of sensors connected to {pi_name}'
