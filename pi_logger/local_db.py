@@ -16,7 +16,7 @@ if not os.path.exists(LOG_PATH):
 DB_PATH = os.path.join(LOG_PATH, "locallogs.db")
 CONN_STRING = 'sqlite:///{}'.format(DB_PATH)
 ENGINE = create_engine(CONN_STRING, echo=False)
-SESSION = sessionmaker(bind=ENGINE)
+# Session = sessionmaker(bind=ENGINE)
 
 
 class LocalData(BASE):
