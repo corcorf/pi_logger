@@ -107,7 +107,6 @@ def poll_dht22(sensor, pin):
     if humidity is not None and temperature is not None:
         data = dict(
                 datetime=time,
-                pin=pin,
                 temp=temperature,
                 humidity=humidity,
             )
@@ -131,7 +130,6 @@ def poll_bme680(sensor, pin):
             airquality = None
         data = dict(
             datetime=time,
-            pin=pin,
             temp=sensor.data.temperature,
             humidity=sensor.data.humidity,
             pressure=sensor.data.pressure,
@@ -206,10 +204,10 @@ if __name__ == "__main__":
     sensors = read_config(pi_name=piname,
                           path='../logger_config.csv')
     dht_df = sensors["dht22"]
-    if dht_df:
+    if dht_df.size:
         dht_sensor = set_up_dht22_sensors()
     bme_df = sensors["bme680"]
-    if bme_df:
+    if bme_df.size:
         bme680_sensor = set_up_bme680_sensors()
 
     while True:
