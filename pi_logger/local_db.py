@@ -54,6 +54,20 @@ class LocalData(BASE):
         info = (self.piname, self.location, self.datetime)
         return "<LocalData(pi={}, sensor={}, datetime={})>".format(*info)
 
+    def get_row(self):
+        data = dict(
+            datetime=self.datetime,
+            location=self.location,
+            sensortype=self.sensortype,
+            piname=self.piname,
+            piid=self.piid,
+            temp=self.temp,
+            humidity=self.humidity,
+            pressure=self.pressure,
+            gasvoc=self.gasvoc,
+        )
+        return data
+
 
 # class LocalSensors(BASE):
 #     """

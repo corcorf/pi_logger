@@ -4,7 +4,7 @@ from local_db import LocalData
 import os
 
 
-def print_last_local_record():
+def get_last_local_record():
     log_path = os.path.join(os.path.expanduser("~"), "logs")
     db_path = os.path.join(log_path, "locallogs.db")
     conn_string = 'sqlite:///{}'.format(db_path)
@@ -16,5 +16,5 @@ def print_last_local_record():
 
 
 if __name__ == "__main__":
-    result = print_last_local_record()
+    result = get_last_local_record()
     print(result)
