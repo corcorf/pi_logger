@@ -232,16 +232,14 @@ def poll_all_bme680(bme_config, bme_sensor, pi_id, pi_name, engine):
             save_readings_to_db(data, engine)
 
 
-if __name__ == "__main__":
-    args = get_arguments()
-    freq = args.frequency
-    set_up_python_logging(pi_name=PINAME, debug=args.debug)
-    piid = getserial()
-    engine = ENGINE
-
-    sensors = read_config(pi_name=PINAME,
-                          path=LOG_PATH,
-                          fn='logger_config.csv')
+def initialise_sensors(pi_name=PINAME,
+                       config_path=LOG_PATH,
+                       config_fn='logger_config.csv'):
+    """
+    Initialise the DHT22 and BME680 sensors
+    Return the sensor instances and dataframes containing the config parameters
+    """
+    sensors = read_config(pi_name=pi_name, path=config_path, fn=config_fn)
 
     dht_config = sensors["dht22"]
     if dht_config.size:
@@ -255,15 +253,41 @@ if __name__ == "__main__":
     else:
         bme_sensor = None
 
+    return dht_sensor, dht_config, bme_sensor, bme_config
+
+
+def poll_once(dht_config, dht_sensor, bme_config, bme_sensor, piid,
+              pi_name=PINAME, engine=ENGINE):
+    """
+    perform one off polling of all sensors in the passed config files
+    (results are saved to the local database)
+    """
+    poll_all_dht22(dht_config, dht_sensor, piid, PINAME, engine)
+    poll_all_bme680(bme_config, bme_sensor, piid, PINAME, engine)
+
+
+if __name__ == "__main__":
+    args = get_arguments()
+    freq = args.frequency
+    debug = args.debug
+    set_up_python_logging(pi_name=PINAME, debug=debug)
+    piid = getserial()
+    engine = ENGINE
+
+    dht_sensor, dht_config, bme_sensor, bme_config = \
+        initialise_sensors(pi_name=PINAME,
+                           config_path=LOG_PATH,
+                           config_fn='logger_config.csv')
+
     if freq is None:
         msg = 'Performing one-off logging of sensors connected to {pi_name}'
         LOG.info(msg)
-        poll_all_dht22(dht_config, dht_sensor, piid, PINAME, engine)
-        poll_all_bme680(bme_config, bme_sensor, piid, PINAME, engine)
+        poll_once(dht_config, dht_sensor, bme_config, bme_sensor, piid,
+                  pi_name=PINAME, engine=engine)
     else:
         msg = 'Will log sensors connected to {pi_name} at frequency of {freq}s'
         LOG.info(msg)
         while True:
-            poll_all_dht22(dht_config, dht_sensor, piid, PINAME, engine)
-            poll_all_bme680(bme_config, bme_sensor, piid, PINAME, engine)
+            poll_once(dht_config, dht_sensor, bme_config, bme_sensor, piid,
+                      pi_name=PINAME, engine=engine)
             time.sleep(freq)

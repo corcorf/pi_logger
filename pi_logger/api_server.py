@@ -3,13 +3,14 @@ adapted from:
 https://www.codementor.io/@sagaragarwal94/building-a-basic-restful-api-in-python-58k02xsiq
 """
 
+import pandas as pd
 from flask import Flask
 from flask_restful import Resource, Api
-from local_db import LocalData, ENGINE
-import pandas as pd
 from sqlalchemy.orm import sessionmaker
-# from print_last_local_record import get_last_local_record
-# from datetime import datetime, timedelta
+from local_db import LocalData, ENGINE
+from local_loggers import PINAME, LOG_PATH
+from local_loggers import set_up_python_logging, getserial, initialise_sensors
+from local_loggers import poll_once
 
 app = Flask(__name__)
 api = Api(app)
@@ -29,35 +30,40 @@ class GetRecent(Resource):
         df = pd.DataFrame(i)
         df['datetime'] = pd.to_datetime(df['datetime'],
                                         format="%Y-%m-%d %H:%M:%S")
-        js = df.to_json()
-        return js
+        return df.to_json()
 
 
 class GetLast(Resource):
     def get(self):
         session = Session()
         table = LocalData
-        q = session.query(table)\
-                   .order_by(table.datetime.desc())
+        q = session.query(table).order_by(table.datetime.desc())
         result = q.first()
         df = pd.DataFrame(result.get_row(), index=[0])
-        df['datetime'] = pd.to_datetime(df['datetime'],
-                                        format="%Y-%m-%d %H:%M:%S")
-        js = df.to_json()
-        return js
+        if df.size:
+            df['datetime'] = pd.to_datetime(df['datetime'],
+                                            format="%Y-%m-%d %H:%M:%S")
+        return df.to_json()
 
-# class LocalHumidityLocation(Resource):
-#     def get(self, location):
-#         with db_connect.connect() as conn:
-#             q = "select datetime, location, humidity from localdata where location like {location};"
-#             query = conn.execute(q)
-#             result = {'data': [dict(zip(tuple(query.keys()), i)) for i in query.cursor]}
-#         return jsonify(result)
+
+class PollSensors(Resource):
+    def get(self):
+        set_up_python_logging(pi_name=PINAME, debug=False)
+        piid = getserial()
+        engine = ENGINE
+        dht_sensor, dht_config, bme_sensor, bme_config = \
+            initialise_sensors(pi_name=PINAME,
+                               config_path=LOG_PATH,
+                               config_fn='logger_config.csv')
+        # msg = 'Performing one-off logging of sensors connected to {pi_name}'
+        # LOG.info(msg)
+        poll_once(dht_config, dht_sensor, bme_config, bme_sensor, piid,
+                  pi_name=PINAME, engine=engine)
 
 
 api.add_resource(GetRecent, '/get_recent/<start_datetime>')
 api.add_resource(GetLast, '/get_last')
-# api.add_resource(LocalHumidityLocation, '/humidity/<location>')  # Route_3
+api.add_resource(PollSensors, '/poll_sensors')
 
 
 if __name__ == '__main__':
