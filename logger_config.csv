@@ -1,5 +1,5 @@
-name,pi,type,pin1
-livingroom,catflap,dht22,4
-piano,catflap,dht22,24
-bedroom,beret,bme680,0
-front,beret,dht22,4
+id,location,name,type,pin,piid
+0,livingroom,catflap,dht22,4,100000003d12f229
+1,piano,catflap,dht22,24,100000003d12f229
+2,bedroom,beret,bme680,0,0000000058d9da69
+3,front,beret,dht22,4,0000000058d9da69

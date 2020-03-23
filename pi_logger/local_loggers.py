@@ -86,8 +86,8 @@ def read_config(pi_name, path=LOG_PATH, fn='logger_config.csv'):
     """
     LOG.info("reading local logger config")
     file_path = os.path.join(path, fn)
-    config = pd.read_csv(file_path, index_col=0)
-    config = config[config['pi'] == pi_name]
+    config = pd.read_csv(file_path, index_col=1)
+    config = config[config['name'] == pi_name]
     dht_sensors = config[config['type'] == 'dht22']
     bme_sensors = config[config['type'] == 'bme680']
     sensors = {"dht22": dht_sensors, "bme680": bme_sensors}
@@ -160,16 +160,16 @@ def poll_bme680(sensor, pin):
     LOG.info(f'{time_string} polling BME680 sensor on pin {pin}')
     if sensor.get_sensor_data():
         if sensor.data.heat_stable:
-            airquality = sensor.data.gas_resistance
+            gasvoc = sensor.data.gas_resistance
         else:
-            airquality = None
+            gasvoc = None
         data = dict(
             datetime=time,
             sensortype="bme680",
             temp=sensor.data.temperature,
             humidity=sensor.data.humidity,
             pressure=sensor.data.pressure,
-            airquality=airquality
+            gasvoc=gasvoc
         )
         return data
     else:
@@ -213,7 +213,7 @@ def poll_all_dht22(dht_config, dht_sensor, pi_id, pi_name, engine):
     """
     if dht_sensor is not None:
         for location, details in dht_config.iterrows():
-            dht_pin = int(details.pin1)
+            dht_pin = int(details.pin)
             data = poll_dht22(dht_sensor, dht_pin)
             data = add_local_pi_info(data, pi_id, pi_name, location)
             save_readings_to_db(data, engine)
@@ -226,7 +226,7 @@ def poll_all_bme680(bme_config, bme_sensor, pi_id, pi_name, engine):
     """
     if bme_sensor is not None:
         for location, details in bme_config.iterrows():
-            bme_pin = int(details.pin1)
+            bme_pin = int(details.pin)
             data = poll_bme680(bme_sensor, bme_pin)
             data = add_local_pi_info(data, pi_id, pi_name, location)
             save_readings_to_db(data, engine)
