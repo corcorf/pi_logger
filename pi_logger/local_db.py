@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.inspection import inspect
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 import psycopg2
 
 BASE = declarative_base()
@@ -98,6 +99,19 @@ def set_up_database(path, engine):
     if not os.path.exists(path):
         os.mkdir(path)
     BASE.metadata.create_all(engine)
+
+
+def one_or_more_results(query):
+    """
+    Return True if query contains one or more results, otherwise False
+    """
+    try:
+        q.one()
+    except NoResultFound:
+        return False
+    except MultipleResultsFound:
+        pass
+    return True
 
 
 if __name__ == "__main__":

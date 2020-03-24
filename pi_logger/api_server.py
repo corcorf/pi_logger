@@ -4,10 +4,11 @@ https://www.codementor.io/@sagaragarwal94/building-a-basic-restful-api-in-python
 """
 
 import pandas as pd
+import json
 from flask import Flask
 from flask_restful import Resource, Api
 from sqlalchemy.orm import sessionmaker
-from local_db import LocalData, ENGINE
+from local_db import LocalData, ENGINE, one_or_more_results
 from local_loggers import PINAME, LOG_PATH
 from local_loggers import set_up_python_logging, getserial, initialise_sensors
 from local_loggers import poll_once
@@ -25,12 +26,16 @@ class GetRecent(Resource):
         start_datetime = pd.to_datetime(start_datetime)
         q = session.query(table)\
                    .filter(table.datetime > start_datetime)
-        i = q.values("datetime", "location", "sensortype", "piname", "piid",
-                     "temp", "humidity", "pressure", "gasvoc")
-        df = pd.DataFrame(i)
-        df['datetime'] = pd.to_datetime(df['datetime'],
-                                        format="%Y-%m-%d %H:%M:%S")
-        return df.to_json()
+        if one_or_more_results(q):
+            i = q.values("datetime", "location", "sensortype", "piname",
+                         "piid", "temp", "humidity", "pressure", "gasvoc")
+            df = pd.DataFrame(i)
+            df['datetime'] = pd.to_datetime(df['datetime'],
+                                            format="%Y-%m-%d %H:%M:%S")
+            return df.to_json()
+        else:
+            msg = '{"message": "query returns no results"}'
+            return json.loads(msg)
 
 
 class GetLast(Resource):
@@ -38,12 +43,16 @@ class GetLast(Resource):
         session = Session()
         table = LocalData
         q = session.query(table).order_by(table.datetime.desc())
-        result = q.first()
-        df = pd.DataFrame(result.get_row(), index=[0])
-        if df.size:
-            df['datetime'] = pd.to_datetime(df['datetime'],
-                                            format="%Y-%m-%d %H:%M:%S")
-        return df.to_json()
+        if one_or_more_results(q):
+            result = q.first()
+            df = pd.DataFrame(result.get_row(), index=[0])
+            if df.size:
+                df['datetime'] = pd.to_datetime(df['datetime'],
+                                                format="%Y-%m-%d %H:%M:%S")
+            return df.to_json()
+        else:
+            msg = '{"message": "query returns no results"}'
+            return json.loads(msg)
 
 
 class PollSensors(Resource):
