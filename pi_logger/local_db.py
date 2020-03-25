@@ -106,7 +106,7 @@ def one_or_more_results(query):
     Return True if query contains one or more results, otherwise False
     """
     try:
-        q.one()
+        query.one()
     except NoResultFound:
         return False
     except MultipleResultsFound:
