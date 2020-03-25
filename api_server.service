@@ -1,0 +1,11 @@
+[Unit]
+Description=Run flask api server for logger data
+After=multi-user.target
+
+[Service]
+WorkingDirectory=/home/pi/
+User=pi
+ExecStart=/usr/bin/python3 /home/pi/pi_logger/pi_logger/api_server.py
+
+[Install]
+WantedBy=multi-user.target
