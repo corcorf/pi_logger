@@ -18,6 +18,7 @@ from local_loggers import poll_all_dht22, poll_all_bme680
 
 app = Flask(__name__)
 api = Api(app)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 Session = sessionmaker(bind=ENGINE)
 
