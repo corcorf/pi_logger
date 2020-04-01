@@ -13,7 +13,7 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker
 import Adafruit_DHT
 import bme680
-from local_db import LocalData, ENGINE, LOG_PATH
+from pi_logger.local_db import LocalData, ENGINE, LOG_PATH
 
 PINAME = socket.gethostname()
 LOG = logging.getLogger(f'local_loggers_{PINAME}')

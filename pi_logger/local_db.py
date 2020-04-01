@@ -99,9 +99,9 @@ def one_or_more_results(query):
 def get_recent_readings(start_datetime, table=LocalData, engine=ENGINE):
     """
     Get all readings since startdate from the local DB
+    returns an iterator containing the results or None
     """
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session = sessionmaker(bind=engine)()
     query = session.query(table)\
                    .filter(table.datetime > start_datetime)
     if one_or_more_results(query):
@@ -117,9 +117,9 @@ def get_recent_readings(start_datetime, table=LocalData, engine=ENGINE):
 def get_last_reading(table=LocalData, engine=ENGINE):
     """
     Get most recent reading from the local DB
+    returns a dictionary containing the results or None
     """
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session = sessionmaker(bind=engine)()
     query = session.query(table).order_by(table.datetime.desc())
     if one_or_more_results(query):
         result = query.first().get_row()

@@ -4,7 +4,7 @@ Test script. Retrieves last record on local sqlite db and prints result
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from local_db import LocalData
+from pi_logger.local_db import LocalData
 
 
 def get_last_local_record():
