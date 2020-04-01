@@ -12,7 +12,7 @@ environment monitoring system with python and a network of Raspberry Pis.
 The other part of the project can be found in my homesweetpi_ repository. An
 overview of the project architecture is shown in the figure below:
 
-.. image:: https://github.com/corcorf/homesweetpi/blob/master/images/architecture_sketch_2.svg
+.. image:: https://github.com/corcorf/homesweetpi/blob/master/images/architecture_sketch.svg
 
 pi_logger runs on Raspberry Pis equipped with environment monitoring sensors
 (currently the DHT22_ and BME680_ sensors are supported). It polls the sensors
