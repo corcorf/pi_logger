@@ -5,10 +5,10 @@ and handled using the SQLalchemy ORM.
 """
 
 import os
-from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, DateTime, Float
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.ext.declarative import declarative_base
 
 BASE = declarative_base()
 LOG_PATH = os.path.join(os.path.expanduser("~"), "logs")
@@ -94,6 +94,38 @@ def one_or_more_results(query):
     except MultipleResultsFound:
         pass
     return True
+
+
+def get_recent_readings(start_datetime, table=LocalData, engine=ENGINE):
+    """
+    Get all readings since startdate from the local DB
+    """
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(table)\
+                   .filter(table.datetime > start_datetime)
+    if one_or_more_results(query):
+        result = query.values(
+            "datetime", "location", "sensortype", "piname",
+            "piid", "temp", "humidity", "pressure", "gasvoc"
+        )
+    else:
+        result = None
+    return result
+
+
+def get_last_reading(table=LocalData, engine=ENGINE):
+    """
+    Get most recent reading from the local DB
+    """
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(table).order_by(table.datetime.desc())
+    if one_or_more_results(query):
+        result = query.first().get_row()
+    else:
+        result = None
+    return result
 
 
 if __name__ == "__main__":

@@ -10,8 +10,7 @@ import json
 import pandas as pd
 from flask import Flask
 from flask_restful import Resource, Api
-from sqlalchemy.orm import sessionmaker
-from local_db import LocalData, ENGINE, one_or_more_results
+from local_db import ENGINE, get_recent_readings, get_last_reading
 from local_loggers import PINAME, LOG_PATH
 from local_loggers import set_up_python_logging, getserial, initialise_sensors
 from local_loggers import poll_all_dht22, poll_all_bme680
@@ -19,8 +18,6 @@ from local_loggers import poll_all_dht22, poll_all_bme680
 app = Flask(__name__)
 api = Api(app)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-
-Session = sessionmaker(bind=ENGINE)
 
 
 class GetRecent(Resource):
@@ -32,23 +29,16 @@ class GetRecent(Resource):
         """
         GetRecent API resource get function
         """
-        session = Session()
-        table = LocalData
         start_datetime = pd.to_datetime(start_datetime)
-        query = session.query(table)\
-                       .filter(table.datetime > start_datetime)
-        if one_or_more_results(query):
-            result = query.values(
-                "datetime", "location", "sensortype", "piname",
-                "piid", "temp", "humidity", "pressure", "gasvoc"
-            )
+        result = get_recent_readings(start_datetime)
+        if result is None:
+            msg = '{"message": "query returns no results"}'
+            result = json.loads(msg)
+        else:
             result = pd.DataFrame(result)
             result['datetime'] = pd.to_datetime(result['datetime'],
                                                 format="%Y-%m-%d %H:%M:%S")
             result = result.to_json()
-        else:
-            msg = '{"message": "query returns no results"}'
-            result = json.loads(msg)
         return result
 
 
@@ -61,19 +51,15 @@ class GetLast(Resource):
         """
         GetLast API resource get function
         """
-        session = Session()
-        table = LocalData
-        query = session.query(table).order_by(table.datetime.desc())
-        if one_or_more_results(query):
-            result = query.first()
-            result = pd.DataFrame(result.get_row(), index=[0])
-            if result.size:
-                result['datetime'] = pd.to_datetime(result['datetime'],
-                                                    format="%Y-%m-%d %H:%M:%S")
-            result = result.to_json()
-        else:
+        result = get_last_reading()
+        if result is None:
             msg = '{"message": "query returns no results"}'
             result = json.loads(msg)
+        else:
+            result = pd.DataFrame(result, index=[0])
+            result['datetime'] = pd.to_datetime(result['datetime'],
+                                                format="%Y-%m-%d %H:%M:%S")
+            result = result.to_json()
         return result
 
 
