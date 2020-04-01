@@ -1,4 +1,4 @@
-Adafruit_DHT
+Adafruit_DHT --install-option="--force-pi"
 bme680
 smbus
 pandas
