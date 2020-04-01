@@ -83,6 +83,21 @@ def set_up_database(path, engine):
     BASE.metadata.create_all(engine)
 
 
+def save_readings_to_db(data, engine):
+    """
+    Save data from one of the sensors to the local database
+    """
+    if data is not None:
+        # LOG.debug("attempting to write data to db")
+        data = LocalData(**data)
+        session = sessionmaker(bind=engine)()
+        session.add(data)
+        session.flush()
+        session.commit()
+    # else:
+    #     LOG.debug("skipping writing of data. data is None")
+
+
 def one_or_more_results(query):
     """
     Return True if query contains one or more results, otherwise False

@@ -16,4 +16,4 @@ install:
 script:
   # - tox
   - pylint *.py
-  - pytest
+  - pytest tests/test_local_db.py
