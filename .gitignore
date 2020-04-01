@@ -107,3 +107,6 @@ ENV/
 # flags for pi_logger shell scripts
 local_db_set_up_complete
 logger_service_set_up_complete
+
+test.db
+scratch.ipynb
