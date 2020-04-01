@@ -159,7 +159,7 @@ def poll_bme680(sensor, pin):
              time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
     if sensor.get_sensor_data():
         data = dict(
-            datetime=time,
+            datetime=time_now,
             sensortype="bme680",
             temp=sensor.data.temperature,
             humidity=sensor.data.humidity,
