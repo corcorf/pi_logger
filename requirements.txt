@@ -1,3 +1,4 @@
+python>=3.6
 Adafruit_DHT
 bme680
 smbus
