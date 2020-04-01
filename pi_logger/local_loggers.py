@@ -10,10 +10,9 @@ import time
 import logging
 from datetime import datetime
 import pandas as pd
-from sqlalchemy.orm import sessionmaker
 import Adafruit_DHT
 import bme680
-from pi_logger.local_db import LocalData, ENGINE, LOG_PATH
+from pi_logger.local_db import ENGINE, LOG_PATH, save_readings_to_db
 
 PINAME = socket.gethostname()
 LOG = logging.getLogger(f'local_loggers_{PINAME}')
@@ -172,21 +171,6 @@ def poll_bme680(sensor, pin):
                  time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
         data = None
     return data
-
-
-def save_readings_to_db(data, engine):
-    """
-    Save data from one of the sensors to the local database
-    """
-    if data is not None:
-        LOG.debug("attempting to write data to db")
-        data = LocalData(**data)
-        session = sessionmaker(bind=engine)()
-        session.add(data)
-        session.flush()
-        session.commit()
-    else:
-        LOG.debug("skipping writing of data. data is None")
 
 
 def add_local_pi_info(data, pi_id, pi_name, location):
