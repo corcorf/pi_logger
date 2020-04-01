@@ -4,23 +4,22 @@ Log ambient atmospheric conditions at a specified frequency
 """
 
 import os
+import argparse
+import socket
 import time
+import logging
 from datetime import datetime
+import pandas as pd
+from sqlalchemy.orm import sessionmaker
 import Adafruit_DHT
 import bme680
-import argparse
-import pandas as pd
-import socket
-import logging
-from sqlalchemy.orm import sessionmaker
-
 from local_db import LocalData, ENGINE, LOG_PATH
 
 PINAME = socket.gethostname()
 LOG = logging.getLogger(f'local_loggers_{PINAME}')
 
 
-def set_up_python_logging(pi_name, debug=False,
+def set_up_python_logging(debug=False,
                           log_filename="local_loggers.log",
                           log_path=LOG_PATH):
     """
@@ -68,24 +67,23 @@ def getserial():
     LOG.info("attempting to get cpu serial number")
     cpuserial = "0000000000000000"
     try:
-        f = open('/proc/cpuinfo', 'r')
-        for line in f:
-            if line[0:6] == 'Serial':
-                cpuserial = line[10:26]
-        f.close()
+        with open('/proc/cpuinfo', 'r') as file:
+            for line in file:
+                if line[0:6] == 'Serial':
+                    cpuserial = line[10:26]
     except FileNotFoundError:
         cpuserial = "ERROR000000000"
     return cpuserial
 
 
-def read_config(pi_name, path=LOG_PATH, fn='logger_config.csv'):
+def read_config(pi_name, path=LOG_PATH, filename='logger_config.csv'):
     """
     Read local config file from path to determine which loggers should be set
     up
     Return dictionary of logger_type: list_of_loggers
     """
     LOG.info("reading local logger config")
-    file_path = os.path.join(path, fn)
+    file_path = os.path.join(path, filename)
     config = pd.read_csv(file_path, index_col=1)
     config = config[config['name'] == pi_name]
     dht_sensors = config[config['type'] == 'dht22']
@@ -96,8 +94,8 @@ def read_config(pi_name, path=LOG_PATH, fn='logger_config.csv'):
         'dht22_loggers: {}'.format(', '.join(dht_sensors.index.tolist())),
         'bme680_loggers: {}'.format(', '.join(bme_sensors.index.tolist())),
     ]
-    for m in messages:
-        LOG.info(m)
+    for msg in messages:
+        LOG.info(msg)
 
     return sensors
 
@@ -134,47 +132,46 @@ def poll_dht22(sensor, pin):
     """
     Get a reading from a DHT22 sensor and return data as a dictionary
     """
-    time = datetime.now()
-    time_string = time.strftime("%Y-%m-%d %H:%M:%S")
-    LOG.info(f'{time_string} polling DHT22 sensor on pin {pin}')
+    time_now = datetime.now()
+    LOG.info('%s polling DHT22 sensor on pin %s',
+             time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
     humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
-    if humidity is not None and temperature is not None:
-        data = dict(
-                datetime=time,
-                sensortype="dht22",
-                temp=temperature,
-                humidity=humidity,
-            )
-        return data
+    if humidity is None and temperature is None:
+        LOG.info('%s failed to retrieve data from DHT22 sensor at pin %s',
+                 time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
+        data = None
     else:
-        message = '{} failed to retrieve data from DHT22 sensor at pin {}'
-        LOG.info(message.format(time_string, pin))
+        data = dict(
+            datetime=time_now,
+            sensortype="dht22",
+            temp=temperature,
+            humidity=humidity,
+        )
+    return data
 
 
 def poll_bme680(sensor, pin):
     """
     Get a reading from a BME680 sensor and return data as a dictionary
     """
-    time = datetime.now()
-    time_string = time.strftime("%Y-%m-%d %H:%M:%S")
-    LOG.info(f'{time_string} polling BME680 sensor on pin {pin}')
+    time_now = datetime.now()
+    LOG.info('%s polling BME680 sensor on pin %s',
+             time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
     if sensor.get_sensor_data():
-        if sensor.data.heat_stable:
-            gasvoc = sensor.data.gas_resistance
-        else:
-            gasvoc = None
         data = dict(
             datetime=time,
             sensortype="bme680",
             temp=sensor.data.temperature,
             humidity=sensor.data.humidity,
             pressure=sensor.data.pressure,
-            gasvoc=gasvoc
         )
-        return data
+        if sensor.data.heat_stable:
+            data['gasvoc'] = sensor.data.gas_resistance
     else:
-        message = '{} failed to retrieve data from BME680 sensor at pin {}'
-        LOG.info(message.format(time_string, pin))
+        LOG.info('%s failed to retrieve data from BME680 sensor at pin %s',
+                 time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
+        data = None
+    return data
 
 
 def save_readings_to_db(data, engine):
@@ -184,8 +181,7 @@ def save_readings_to_db(data, engine):
     if data is not None:
         LOG.debug("attempting to write data to db")
         data = LocalData(**data)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+        session = sessionmaker(bind=engine)()
         session.add(data)
         session.flush()
         session.commit()
@@ -203,7 +199,7 @@ def add_local_pi_info(data, pi_id, pi_name, location):
         data['location'] = location
         data['piname'] = pi_name
         data['piid'] = pi_id
-        return data
+    return data
 
 
 def poll_all_dht22(dht_config, dht_sensor, pi_id, pi_name, engine):
@@ -239,7 +235,9 @@ def initialise_sensors(pi_name=PINAME,
     Initialise the DHT22 and BME680 sensors
     Return the sensor instances and dataframes containing the config parameters
     """
-    sensors = read_config(pi_name=pi_name, path=config_path, fn=config_fn)
+    sensors = read_config(
+        pi_name=pi_name, path=config_path, filename=config_fn
+    )
 
     dht_config = sensors["dht22"]
     if dht_config.size:
@@ -252,42 +250,30 @@ def initialise_sensors(pi_name=PINAME,
         bme_sensor = set_up_bme680_sensors()
     else:
         bme_sensor = None
-
     return dht_sensor, dht_config, bme_sensor, bme_config
 
 
-def poll_once(dht_config, dht_sensor, bme_config, bme_sensor, piid,
-              pi_name=PINAME, engine=ENGINE):
-    """
-    perform one off polling of all sensors in the passed config files
-    (results are saved to the local database)
-    """
-    poll_all_dht22(dht_config, dht_sensor, piid, PINAME, engine)
-    poll_all_bme680(bme_config, bme_sensor, piid, PINAME, engine)
-
-
 if __name__ == "__main__":
-    args = get_arguments()
-    freq = args.frequency
-    debug = args.debug
-    set_up_python_logging(pi_name=PINAME, debug=debug)
-    piid = getserial()
-    engine = ENGINE
+    PIID = getserial()
+    ARGS = get_arguments()
+    FREQ = ARGS.frequency
+    DEBUG = ARGS.debug
+    set_up_python_logging(debug=DEBUG)
 
-    dht_sensor, dht_config, bme_sensor, bme_config = \
+    DHT_SENSOR, DHT_CONF, BME_SENSOR, BME_CONF = \
         initialise_sensors(pi_name=PINAME,
                            config_path=LOG_PATH,
                            config_fn='logger_config.csv')
 
-    if freq is None:
-        msg = 'Performing one-off logging of sensors connected to {pi_name}'
-        LOG.info(msg)
-        poll_once(dht_config, dht_sensor, bme_config, bme_sensor, piid,
-                  pi_name=PINAME, engine=engine)
+    if FREQ is None:
+        LOG.info('Performing one-off logging of sensors connected to %s',
+                 PINAME)
+        poll_all_dht22(DHT_CONF, DHT_SENSOR, PIID, PINAME, ENGINE)
+        poll_all_bme680(BME_CONF, BME_SENSOR, PIID, PINAME, ENGINE)
     else:
-        msg = 'Will log sensors connected to {pi_name} at frequency of {freq}s'
-        LOG.info(msg)
+        LOG.info('Will log sensors connected to %s at frequency of %s s',
+                 PINAME, FREQ)
         while True:
-            poll_once(dht_config, dht_sensor, bme_config, bme_sensor, piid,
-                      pi_name=PINAME, engine=engine)
-            time.sleep(freq)
+            poll_all_dht22(DHT_CONF, DHT_SENSOR, PIID, PINAME, ENGINE)
+            poll_all_bme680(BME_CONF, BME_SENSOR, PIID, PINAME, ENGINE)
+            time.sleep(FREQ)

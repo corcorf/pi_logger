@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable=C0103
 
 """The setup script."""
 
@@ -10,11 +11,13 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+with open('requirements.txt') as requirements_file:
+    requirements = requirements_file.read()
 
 setup_requirements = ['pytest-runner', ]
 
-test_requirements = ['pytest>=3', ]
+with open('requirements_dev.txt') as requirements_file:
+    test_requirements = requirements_file.read()
 
 setup(
     author="Flann Corcoran",
@@ -31,7 +34,8 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    description="Package for logging temperature and humidity on a raspberry pi equiped with DHT22 and/or BME680 sensors",
+    description="Package for logging temperature and humidity on a raspberry pi\
+                 equiped with DHT22 and/or BME680 sensors",
     entry_points={
         'console_scripts': [
             'pi_logger=pi_logger.cli:main',

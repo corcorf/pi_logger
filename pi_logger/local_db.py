@@ -1,14 +1,14 @@
+"""
+Defines SQL tables for the local SQLite database on a raspberry pi
+as well as functions for frequently used queries. Tables are defined
+and handled using the SQLalchemy ORM.
+"""
+
 import os
-import logging
-from sqlalchemy import create_engine, distinct, CheckConstraint
-from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, DateTime, Float, BigInteger
-from sqlalchemy.dialects.postgresql import TSVECTOR
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, String, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
-from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
-import psycopg2
 
 BASE = declarative_base()
 LOG_PATH = os.path.join(os.path.expanduser("~"), "logs")
@@ -17,7 +17,6 @@ if not os.path.exists(LOG_PATH):
 DB_PATH = os.path.join(LOG_PATH, "locallogs.db")
 CONN_STRING = 'sqlite:///{}'.format(DB_PATH)
 ENGINE = create_engine(CONN_STRING, echo=False)
-# Session = sessionmaker(bind=ENGINE)
 
 
 class LocalData(BASE):
@@ -56,6 +55,10 @@ class LocalData(BASE):
         return "<LocalData(pi={}, sensor={}, datetime={})>".format(*info)
 
     def get_row(self):
+        """
+        Return a dictionary containing the readings for a paricular time and
+        sensor, complete with the full sensor information.
+        """
         data = dict(
             datetime=self.datetime,
             location=self.location,
@@ -68,27 +71,6 @@ class LocalData(BASE):
             gasvoc=self.gasvoc,
         )
         return data
-
-
-# class LocalSensors(BASE):
-#     """
-#     Class for sensors table in local SQLite DB
-#     _______
-#     columns:
-#         piname (String)
-#         piid (String)
-#         sensorname (String)
-#         pin (Integer)
-#     """
-#     __tablename__ = 'localsensors'
-#     piname = Column(String)
-#     piid = Column(String)
-#     sensorname = Column(String)
-#     pin = Column(Integer)
-#
-#     def __repr__(self):
-#         info = (self.piname, self.location, self.pin)
-#         return "<LocalSensor(pi={}, sensor={}, pin={})>".format(*info)
 
 
 def set_up_database(path, engine):
