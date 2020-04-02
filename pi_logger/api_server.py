@@ -10,9 +10,11 @@ import json
 import pandas as pd
 from flask import Flask
 from flask_restful import Resource, Api
-from pi_logger.local_db import ENGINE, LOG_PATH, get_recent_readings, get_last_reading
+from pi_logger.local_db import (ENGINE, LOG_PATH, get_recent_readings,
+                                get_last_reading)
 from pi_logger.local_loggers import PINAME
-from pi_logger.local_loggers import set_up_python_logging, getserial, initialise_sensors
+from pi_logger.local_loggers import (set_up_python_logging, getserial,
+                                     initialise_sensors)
 from pi_logger.local_loggers import poll_all_dht22, poll_all_bme680
 
 app = Flask(__name__)
@@ -57,8 +59,6 @@ class GetLast(Resource):
             result = json.loads(msg)
         else:
             result = pd.DataFrame(result, index=[0])
-            result['datetime'] = pd.to_datetime(result['datetime'],
-                                                format="%Y-%m-%d %H:%M:%S")
             result = result.to_json()
         return result
 
