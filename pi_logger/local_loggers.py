@@ -12,7 +12,7 @@ from datetime import datetime
 import pandas as pd
 import Adafruit_DHT
 import bme680
-from local_db import LocalData, ENGINE, LOG_PATH, save_readings_to_db
+from pi_logger.local_db import ENGINE, LOG_PATH, save_readings_to_db
 
 PINAME = socket.gethostname()
 LOG = logging.getLogger(f'local_loggers_{PINAME}')
