@@ -3,9 +3,9 @@ Description=Log relative humidity and temperature
 After=multi-user.target
 
 [Service]
-WorkingDirectory=/home/pi/
+WorkingDirectory=/home/pi/pi_logger
 User=pi
-ExecStart=/usr/bin/python3 /home/pi/pi_logger/pi_logger/local_loggers.py --freq 300 --debug
+ExecStart=/home/pi/pi_logger/env/bin/python3 pi_logger/local_loggers.py --freq 300 --debug
 
 [Install]
 WantedBy=multi-user.target
