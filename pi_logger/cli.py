@@ -1,19 +1,24 @@
 """Console script for pi_logger."""
 import argparse
 import sys
+from pi_logger.local_loggers import LOG
 
 
-def main():
-    """Console script for pi_logger."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('_', nargs='*')
-    args = parser.parse_args()
-
-    print("Arguments: " + str(args._))
-    print("Replace this message by putting your code into "
-          "pi_logger.cli.main")
-    return 0
+def get_local_logger_arguments():
+    """
+    Get a reading frequency as an argument when the script is run from CLI
+    """
+    LOG.debug("fetching arguments")
+    description = 'Log ambient conditions at a specified frequency.'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("--freq", dest='frequency', type=int, nargs='?',
+                        default=None, const=300,
+                        help='Frequency of readings in seconds')
+    parser.add_argument('--debug', dest='debug', action='store_const',
+                        const=True, default=False,
+                        help='set the logging module to debug mode')
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover
+    sys.exit(get_local_logger_arguments())  # pragma: no cover

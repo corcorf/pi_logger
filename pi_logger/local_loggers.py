@@ -13,6 +13,7 @@ import pandas as pd
 import Adafruit_DHT
 import bme680
 from pi_logger.local_db import ENGINE, LOG_PATH, save_readings_to_db
+from pi_logger.cli import get_local_logger_arguments
 
 PINAME = socket.gethostname()
 LOG = logging.getLogger(f'local_loggers_{PINAME}')
@@ -36,22 +37,6 @@ def set_up_python_logging(debug=False,
     else:
         # logging.basicConfig(filename=filename, level=logging.INFO)
         LOG.setLevel(logging.INFO)
-
-
-def get_arguments():
-    """
-    Get a reading frequency as an argument when the script is run from CLI
-    """
-    LOG.debug("fetching arguments")
-    description = 'Log ambient conditions at a specified frequency.'
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--freq", dest='frequency', type=int, nargs='?',
-                        default=None, const=300,
-                        help='Frequency of readings in seconds')
-    parser.add_argument('--debug', dest='debug', action='store_const',
-                        const=True, default=False,
-                        help='set the logging module to debug mode')
-    return parser.parse_args()
 
 
 def getserial():
@@ -239,7 +224,7 @@ def initialise_sensors(pi_name=PINAME,
 
 if __name__ == "__main__":
     PIID = getserial()
-    ARGS = get_arguments()
+    ARGS = get_local_logger_arguments()
     FREQ = ARGS.frequency
     DEBUG = ARGS.debug
     set_up_python_logging(debug=DEBUG)
