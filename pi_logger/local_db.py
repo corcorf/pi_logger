@@ -5,18 +5,20 @@ and handled using the SQLalchemy ORM.
 """
 
 import os
+import logging
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
+from pi_logger import PINAME, LOG_PATH
+
 BASE = declarative_base()
-LOG_PATH = os.path.join(os.path.expanduser("~"), "logs")
-if not os.path.exists(LOG_PATH):
-    os.mkdir(LOG_PATH)
 DB_PATH = os.path.join(LOG_PATH, "locallogs.db")
 CONN_STRING = 'sqlite:///{}'.format(DB_PATH)
 ENGINE = create_engine(CONN_STRING, echo=False)
+
+LOG = logging.getLogger(f"pi_logger_{PINAME}.local_db")
 
 
 class LocalData(BASE):

@@ -4,39 +4,18 @@ Log ambient atmospheric conditions at a specified frequency
 """
 
 import os
-import argparse
-import socket
 import time
 import logging
 from datetime import datetime
 import pandas as pd
 import Adafruit_DHT
 import bme680
-from pi_logger.local_db import ENGINE, LOG_PATH, save_readings_to_db
+from pi_logger import PINAME, LOG_PATH
+from pi_logger.local_db import ENGINE, save_readings_to_db
 from pi_logger.cli import get_local_logger_arguments
 
-PINAME = socket.gethostname()
-LOG = logging.getLogger(f'local_loggers_{PINAME}')
 
-
-def set_up_python_logging(debug=False,
-                          log_filename="local_loggers.log",
-                          log_path=LOG_PATH):
-    """
-    Set up the python logging module
-    """
-    log_filename = os.path.join(log_path, log_filename)
-    handler = logging.FileHandler(log_filename, mode='a')
-    fmt = '%(asctime)s %(message)s'
-    datefmt = '%Y/%m/%d %H:%M:%S'
-    handler.setFormatter(logging.Formatter(fmt, datefmt=datefmt))
-    LOG.addHandler(handler)
-    if debug:
-        # logging.basicConfig(filename=filename, level=logging.DEBUG)
-        LOG.setLevel(logging.DEBUG)
-    else:
-        # logging.basicConfig(filename=filename, level=logging.INFO)
-        LOG.setLevel(logging.INFO)
+LOG = logging.getLogger(f"pi_logger_{PINAME}.local_loggers")
 
 
 def getserial():
@@ -227,7 +206,6 @@ if __name__ == "__main__":
     ARGS = get_local_logger_arguments()
     FREQ = ARGS.frequency
     DEBUG = ARGS.debug
-    set_up_python_logging(debug=DEBUG)
 
     DHT_SENSOR, DHT_CONF, BME_SENSOR, BME_CONF = \
         initialise_sensors(pi_name=PINAME,

@@ -1,7 +1,11 @@
 """Console script for pi_logger."""
 import argparse
 import sys
-from pi_logger.local_loggers import LOG
+import logging
+
+from pi_logger import PINAME
+
+LOG = logging.getLogger(f"pi_logger_{PINAME}.cli")
 
 
 def get_local_logger_arguments():

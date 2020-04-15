@@ -7,19 +7,22 @@ https://www.codementor.io/@sagaragarwal94/building-a-basic-restful-api-in-python
 # pylint: disable=C0103
 
 import json
+import logging
+
 import pandas as pd
 from flask import Flask
 from flask_restful import Resource, Api
-from pi_logger.local_db import (ENGINE, LOG_PATH, get_recent_readings,
+from pi_logger import PINAME, LOG_PATH
+from pi_logger.local_db import (ENGINE, get_recent_readings,
                                 get_last_reading)
-from pi_logger.local_loggers import PINAME
-from pi_logger.local_loggers import (set_up_python_logging, getserial,
-                                     initialise_sensors)
+from pi_logger.local_loggers import getserial, initialise_sensors
 from pi_logger.local_loggers import poll_all_dht22, poll_all_bme680
 
 app = Flask(__name__)
 api = Api(app)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+LOG = logging.getLogger(f"pi_logger_{PINAME}.api_server")
 
 
 class GetRecent(Resource):
@@ -72,7 +75,6 @@ class PollSensors(Resource):
         """
         PollSensors API resource get function
         """
-        set_up_python_logging(debug=False)
         piid = getserial()
         engine = ENGINE
         dht_sensor, dht_config, bme_sensor, bme_config = \

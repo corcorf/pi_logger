@@ -8,9 +8,10 @@ import logging
 import pandas as pd
 from sqlalchemy import create_engine
 from local_db import LocalData
-from local_loggers import getserial
+from pi_logger import PINAME
+from pi_logger.local_loggers import getserial
 
-logging.basicConfig(level=logging.DEBUG)
+LOG = logging.getLogger(f"pi_logger_{PINAME}.import_existing")
 
 
 def load_existing_data_to_db(existing_log=None,
@@ -29,7 +30,7 @@ def load_existing_data_to_db(existing_log=None,
             os.mkdir(log_path)
         db_path = os.path.join(log_path, "locallogs.db")
 
-    logging.debug("reading existing log from %s", existing_log)
+    LOG.debug("reading existing log from %s", existing_log)
     data = pd.read_csv(existing_log)
     data = data.rename(columns={k: k.lower() for k in data.columns})
     data = data.rename(columns={"relhum": "humidity", "airquality": "gasvoc",
@@ -38,9 +39,9 @@ def load_existing_data_to_db(existing_log=None,
                                       format="%d/%m/%Y %H:%M:%S")
     data['piid'] = getserial()
     conn_string = 'sqlite:///{}'.format(db_path)
-    logging.debug("connecting to %s", db_path)
+    LOG.debug("connecting to %s", db_path)
     engine = create_engine(conn_string, echo=True)
-    logging.debug("saving records to %s", db_path)
+    LOG.debug("saving records to %s", db_path)
     data.to_sql(LocalData.__tablename__, engine, if_exists="append",
                 index=False)
 
