@@ -3,12 +3,15 @@
 import os
 import socket
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 __author__ = """Flann Corcoran"""
 __email__ = 'corcorf@posteo.net'
 __version__ = '0.1.0'
 
-LOG_PATH = os.path.join(os.path.expanduser("~"), "logs")
+LOG_PATH = os.getenv("LOG_PATH", default="logs")
 if not os.path.exists(LOG_PATH):
     os.mkdir(LOG_PATH)
 PINAME = socket.gethostname()
@@ -51,3 +54,5 @@ def set_up_python_logging(level="DEBUG",
 LOG = set_up_python_logging(name=f"pi_logger_{PINAME}", level="DEBUG",
                             log_filename="local_loggers.log",
                             log_path=LOG_PATH)
+
+LOG.debug("Path to db: %s", LOG_PATH)

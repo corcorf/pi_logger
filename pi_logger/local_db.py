@@ -81,7 +81,9 @@ def set_up_database(path, engine):
     Return the database connection
     """
     if not os.path.exists(path):
+        LOG.info("Creating dir: %s", path)
         os.mkdir(path)
+    LOG.info("Attempting to create db")
     BASE.metadata.create_all(engine)
 
 
@@ -90,14 +92,14 @@ def save_readings_to_db(data, engine):
     Save data from one of the sensors to the local database
     """
     if data is not None:
-        # LOG.debug("attempting to write data to db")
+        LOG.debug("attempting to write data to db")
         data = LocalData(**data)
         session = sessionmaker(bind=engine)()
         session.add(data)
         session.flush()
         session.commit()
-    # else:
-    #     LOG.debug("skipping writing of data. data is None")
+    else:
+        LOG.debug("skipping writing of data. data is None")
 
 
 def one_or_more_results(query):
@@ -119,6 +121,7 @@ def get_recent_readings(start_datetime, table=LocalData, engine=ENGINE):
     returns an iterator containing the results or None
     """
     session = sessionmaker(bind=engine)()
+    LOG.debug("Querying db for data since %s", start_datetime)
     query = session.query(table)\
                    .filter(table.datetime > start_datetime)
     if one_or_more_results(query):
@@ -127,6 +130,7 @@ def get_recent_readings(start_datetime, table=LocalData, engine=ENGINE):
             "piid", "temp", "humidity", "pressure", "gasvoc"
         )
     else:
+        LOG.debug("No results from query")
         result = None
     return result
 
@@ -137,10 +141,12 @@ def get_last_reading(table=LocalData, engine=ENGINE):
     returns a dictionary containing the results or None
     """
     session = sessionmaker(bind=engine)()
+    LOG.debug("Querying for last reading")
     query = session.query(table).order_by(table.datetime.desc())
     if one_or_more_results(query):
         result = query.first().get_row()
     else:
+        LOG.debug("No results from query (last)")
         result = None
     return result
 

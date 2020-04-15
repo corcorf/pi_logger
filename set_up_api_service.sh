@@ -4,6 +4,8 @@
 if [ ! -e api_service_set_up_complete ]
 then
   # set up api server as a service
+  echo "creating api_server.service from script"
+  source api_server.service.sh > api_server.service
   echo "copying api_server.service to  /etc/systemd/system/"
   cp api_server.service /etc/systemd/system/
   echo "reloading systemd daemon and enabling service"

@@ -4,6 +4,8 @@
 if [ ! -e logger_service_set_up_complete ]
 then
   # set up logging as a service
+  echo "creating logger.service from script"
+  source logger.service.sh > logger.service
   echo "copying logger.service to  /etc/systemd/system/"
   cp logger.service /etc/systemd/system/logger.service
   echo "reloading systemd daemon and enabling service"
