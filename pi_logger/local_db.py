@@ -36,6 +36,8 @@ class LocalData(BASE):
         humidity (Float)
         pressure (Float)
         gasvoc (Float)
+        mcdvalue (Integer)
+        mcdvoltage (Float)
     """
     __tablename__ = 'localdata'
 
@@ -49,6 +51,8 @@ class LocalData(BASE):
     humidity = Column(Float)
     pressure = Column(Float)
     gasvoc = Column(Float)
+    mcdvalue = Column(Integer)
+    mcdvoltage = Column(Float)
 
     sqlite_autoincrement = True
 

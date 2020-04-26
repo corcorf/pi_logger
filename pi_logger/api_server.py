@@ -16,7 +16,8 @@ from pi_logger import PINAME, LOG_PATH
 from pi_logger.local_db import (ENGINE, get_recent_readings,
                                 get_last_reading)
 from pi_logger.local_loggers import getserial, initialise_sensors
-from pi_logger.local_loggers import poll_all_dht22, poll_all_bme680
+from pi_logger.local_loggers import (poll_all_dht22, poll_all_bme680,
+                                     poll_all_mcp3008)
 
 app = Flask(__name__)
 api = Api(app)
@@ -77,14 +78,15 @@ class PollSensors(Resource):
         """
         piid = getserial()
         engine = ENGINE
-        dht_sensor, dht_config, bme_sensor, bme_config = \
+        dht_sensor, dht_conf, bme_sensor, bme_conf, mcp_chip, mcp_conf = \
             initialise_sensors(pi_name=PINAME,
                                config_path=LOG_PATH,
                                config_fn='logger_config.csv')
         # msg = 'Performing one-off logging of sensors connected to {pi_name}'
         # LOG.info(msg)
-        poll_all_dht22(dht_config, dht_sensor, piid, PINAME, engine)
-        poll_all_bme680(bme_config, bme_sensor, piid, PINAME, engine)
+        poll_all_dht22(dht_conf, dht_sensor, piid, PINAME, engine)
+        poll_all_bme680(bme_conf, bme_sensor, piid, PINAME, engine)
+        poll_all_mcp3008(mcp_conf, mcp_chip, piid, PINAME, engine)
 
 
 api.add_resource(GetRecent, '/get_recent/<start_datetime>')

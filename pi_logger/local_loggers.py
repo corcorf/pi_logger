@@ -1,4 +1,3 @@
-#! /usr/bin/python3
 """
 Log ambient atmospheric conditions at a specified frequency
 """
@@ -7,9 +6,16 @@ import os
 import time
 import logging
 from datetime import datetime
+
 import pandas as pd
 import Adafruit_DHT
 import bme680
+import busio
+import digitalio
+import board
+import adafruit_mcp3xxx.mcp3008 as MCP
+from adafruit_mcp3xxx.analog_in import AnalogIn
+
 from pi_logger import PINAME, LOG_PATH
 from pi_logger.local_db import ENGINE, save_readings_to_db
 from pi_logger.cli import get_local_logger_arguments
@@ -91,6 +97,16 @@ def set_up_bme680_sensors():
     return sensor
 
 
+def set_up_mcp_convertor():
+    """
+    Return an instance of the MCP analog-to-digital converter for reading
+    the soil moisture probe
+    """
+    spi_bus = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
+    chip_select = digitalio.DigitalInOut(board.D5)
+    return MCP.MCP3008(spi_bus, chip_select)
+
+
 def poll_dht22(sensor, pin):
     """
     Get a reading from a DHT22 sensor and return data as a dictionary
@@ -137,6 +153,31 @@ def poll_bme680(sensor, pin):
     return data
 
 
+def poll_mcp3008(mcp_chip, pin):
+    """
+    Get a reading from a sensor connected to an MCP analog-to-digital converter
+    and return data as a dictionary
+    """
+    time_now = datetime.now()
+    LOG.info('%s polling MCP chip on pin %s',
+             time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
+    chan = AnalogIn(mcp_chip, getattr(MCP, f"P{pin}"))
+    adc_val = chan.value
+    adc_volt = chan.voltage
+    if adc_val is None and adc_volt is None:
+        LOG.info('%s failed to retrieve data from sensor at MCP pin %s',
+                 time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
+        data = None
+    else:
+        data = dict(
+            datetime=time_now,
+            sensortype="MCP",
+            mcdvalue=adc_val,
+            mcdvoltage=adc_volt,
+        )
+    return data
+
+
 def add_local_pi_info(data, pi_id, pi_name, location):
     """
     Take a dictionary of data read from a sensor and add information relating
@@ -176,6 +217,19 @@ def poll_all_bme680(bme_config, bme_sensor, pi_id, pi_name, engine):
             save_readings_to_db(data, engine)
 
 
+def poll_all_mcp3008(mcp_config, mcp_chip, pi_id, pi_name, engine):
+    """
+    Poll all sensors connected to MCP3008 listed in the config file for this pi
+    Save resulting records to the database specified engine
+    """
+    if mcp_chip is not None:
+        for location, details in mcp_config.iterrows():
+            mcp_pin = int(details.pin)
+            data = poll_mcp3008(mcp_chip, mcp_pin)
+            data = add_local_pi_info(data, pi_id, pi_name, location)
+            save_readings_to_db(data, engine)
+
+
 def initialise_sensors(pi_name=PINAME,
                        config_path=LOG_PATH,
                        config_fn='logger_config.csv'):
@@ -198,7 +252,13 @@ def initialise_sensors(pi_name=PINAME,
         bme_sensor = set_up_bme680_sensors()
     else:
         bme_sensor = None
-    return dht_sensor, dht_config, bme_sensor, bme_config
+
+    mcp_config = sensors["mcp3008"]
+    if mcp_config.size:
+        mcp_chip = set_up_mcp_convertor()
+    else:
+        mcp_chip = None
+    return dht_sensor, dht_config, bme_sensor, bme_config, mcp_chip, mcp_config
 
 
 if __name__ == "__main__":
@@ -207,7 +267,7 @@ if __name__ == "__main__":
     FREQ = ARGS.frequency
     DEBUG = ARGS.debug
 
-    DHT_SENSOR, DHT_CONF, BME_SENSOR, BME_CONF = \
+    DHT_SENSOR, DHT_CONF, BME_SENSOR, BME_CONF, MCP_CHIP, MCP_CONF = \
         initialise_sensors(pi_name=PINAME,
                            config_path=LOG_PATH,
                            config_fn='logger_config.csv')
@@ -217,10 +277,12 @@ if __name__ == "__main__":
                  PINAME)
         poll_all_dht22(DHT_CONF, DHT_SENSOR, PIID, PINAME, ENGINE)
         poll_all_bme680(BME_CONF, BME_SENSOR, PIID, PINAME, ENGINE)
+        poll_all_mcp3008(MCP_CONF, MCP_CHIP, PIID, PINAME, ENGINE)
     else:
         LOG.info('Will log sensors connected to %s at frequency of %s s',
                  PINAME, FREQ)
         while True:
             poll_all_dht22(DHT_CONF, DHT_SENSOR, PIID, PINAME, ENGINE)
             poll_all_bme680(BME_CONF, BME_SENSOR, PIID, PINAME, ENGINE)
+            poll_all_mcp3008(MCP_CONF, MCP_CHIP, PIID, PINAME, ENGINE)
             time.sleep(FREQ)

@@ -1,5 +1,6 @@
 Adafruit_DHT
 bme680
+adafruit_mcp3xxx
 smbus
 pandas
 numpy
