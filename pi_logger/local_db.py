@@ -75,6 +75,8 @@ class LocalData(BASE):
             humidity=self.humidity,
             pressure=self.pressure,
             gasvoc=self.gasvoc,
+            mcdvalue=self.mcdvalue,
+            mcdvoltage=self.mcdvoltage,
         )
         return data
 
