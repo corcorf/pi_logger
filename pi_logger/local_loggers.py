@@ -57,11 +57,17 @@ def read_config(pi_name, path=LOG_PATH, filename='logger_config.csv'):
     config = config[config['name'] == pi_name]
     dht_sensors = config[config['type'] == 'dht22']
     bme_sensors = config[config['type'] == 'bme680']
-    sensors = {"dht22": dht_sensors, "bme680": bme_sensors}
+    mcp_sensors = config[config['type'] == 'mcp3008']
+    sensors = {
+            "dht22": dht_sensors,
+            "bme680": bme_sensors,
+            "mcp3008": mcp_sensors
+        }
 
     messages = [
         'dht22_loggers: {}'.format(', '.join(dht_sensors.index.tolist())),
         'bme680_loggers: {}'.format(', '.join(bme_sensors.index.tolist())),
+        'mcp3008_loggers: {}'.format(', '.join(mcp_sensors.index.tolist())),
     ]
     for msg in messages:
         LOG.info(msg)
