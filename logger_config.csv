@@ -6,3 +6,4 @@ id,location,name,type,pin,piid
 4,livingroom,ripple,dht22,4,10000000a0b67fa8
 5,piano,ripple,dht22,24,10000000a0b67fa8
 6,bay,catflap,mcp3008,0,100000003d12f229
+7,allo,catflap,mcp3008,1,100000003d12f229
