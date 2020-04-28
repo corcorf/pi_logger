@@ -86,7 +86,7 @@ def test_recent_readings():
     )
     save_readings_to_db(data, ENGINE)
 
-    recent_readings = get_recent_readings(start_datetime=TEST_TIME,
+    recent_readings = get_recent_readings(start_datetime_utc=TEST_TIME,
                                           engine=ENGINE)
     assert recent_readings is not None
     recent_readings = pd.DataFrame(recent_readings)

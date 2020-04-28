@@ -28,15 +28,15 @@ LOG = logging.getLogger(f"pi_logger_{PINAME}.api_server")
 
 class GetRecent(Resource):
     """
-    API resource to provide all readings since a given start_datetime
+    API resource to provide all readings since a given start_datetime (UTC)
     """
     # pylint: disable=R0201
-    def get(self, start_datetime):
+    def get(self, start_datetime_utc, engine=ENGINE):
         """
         GetRecent API resource get function
         """
-        start_datetime = pd.to_datetime(start_datetime)
-        result = get_recent_readings(start_datetime, engine=ENGINE)
+        start_datetime_utc = pd.to_datetime(start_datetime_utc)
+        result = get_recent_readings(start_datetime_utc, engine=engine)
         if result is None:
             msg = '{"message": "query returns no results"}'
             result = json.loads(msg)
@@ -53,11 +53,11 @@ class GetLast(Resource):
     API resource to provide the last recorded set of readings
     """
     # pylint: disable=R0201
-    def get(self):
+    def get(self, engine=ENGINE):
         """
         GetLast API resource get function
         """
-        result = get_last_reading(engine=ENGINE)
+        result = get_last_reading(engine=engine)
         if result is None:
             msg = '{"message": "query returns no results"}'
             result = json.loads(msg)
@@ -114,7 +114,7 @@ def main_page():
     return render_template('site_map.html', **context)
 
 
-api.add_resource(GetRecent, '/get_recent/<start_datetime>')
+api.add_resource(GetRecent, '/get_recent/<start_datetime_utc>')
 api.add_resource(GetLast, '/get_last')
 api.add_resource(PollSensors, '/poll_sensors')
 
