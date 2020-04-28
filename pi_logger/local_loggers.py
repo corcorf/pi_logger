@@ -117,7 +117,7 @@ def poll_dht22(sensor, pin):
     """
     Get a reading from a DHT22 sensor and return data as a dictionary
     """
-    time_now = datetime.now()
+    time_now = datetime.utcnow()
     LOG.info('%s polling DHT22 sensor on pin %s',
              time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
     humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
@@ -139,7 +139,7 @@ def poll_bme680(sensor, pin):
     """
     Get a reading from a BME680 sensor and return data as a dictionary
     """
-    time_now = datetime.now()
+    time_now = datetime.utcnow()
     LOG.info('%s polling BME680 sensor on pin %s',
              time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
     if sensor.get_sensor_data():

@@ -27,7 +27,7 @@ class LocalData(BASE):
     _______
     columns:
         id (Integer)
-        datetime (DateTime)
+        datetime (DateTime) # utc
         location (String)
         sensortype (String)
         piname (string)
@@ -121,15 +121,15 @@ def one_or_more_results(query):
     return True
 
 
-def get_recent_readings(start_datetime, table=LocalData, engine=ENGINE):
+def get_recent_readings(start_datetime_utc, table=LocalData, engine=ENGINE):
     """
     Get all readings since startdate from the local DB
     returns an iterator containing the results or None
     """
     session = sessionmaker(bind=engine)()
-    LOG.debug("Querying db for data since %s", start_datetime)
+    LOG.debug("Querying db for data since %s", start_datetime_utc)
     query = session.query(table)\
-                   .filter(table.datetime > start_datetime)
+                   .filter(table.datetime > start_datetime_utc)
     if one_or_more_results(query):
         result = query.values(
             "datetime", "location", "sensortype", "piname",
