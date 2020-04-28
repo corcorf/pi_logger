@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Tests for `pi_logger.sql_tables` module.
+Tests for `pi_logger.sql_tables` and `pi_logger.api_server` modules.
 Separated from sensor tests because sensor dependencies are uninstallable
 on Travis CI
 """
@@ -9,11 +9,15 @@ on Travis CI
 # import pytest
 import os
 from datetime import datetime
+import json
+
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+
 from pi_logger.local_db import (set_up_database, save_readings_to_db,
                                 get_last_reading, get_recent_readings)
+from pi_logger.api_server import GetRecent, GetLast
 
 BASE = declarative_base()
 TEST_DB_PATH = os.getcwd()
@@ -91,3 +95,35 @@ def test_recent_readings():
     recent_readings['datetime'] = pd.to_datetime(recent_readings['datetime'],
                                                  format="%Y-%m-%d %H:%M:%S")
     assert reading_time in recent_readings['datetime'].to_list()
+
+
+def check_result(result):
+    """
+    Check that the result of an API request contains a datetime and temperature
+    or else is an error message
+    """
+    assert isinstance(result, str)
+    converted_result = json.loads(result)
+    assert isinstance(converted_result, dict)
+    keys = converted_result.keys()
+    assert "datetime" in keys or "message" in keys
+    assert "temp" in keys or "message" in keys
+
+
+def test_get_recent():
+    """
+    Check get_recent returns a json with necessary fields
+    """
+    start_datetime = datetime(1970, 1, 1, 0, 0)
+    route = GetRecent()
+    route_result = route.get(start_datetime, engine=ENGINE)
+    check_result(route_result)
+
+
+def test_get_last():
+    """
+    Check get_last returns a json with necessary fields
+    """
+    route = GetLast()
+    route_result = route.get(engine=ENGINE)
+    check_result(route_result)
