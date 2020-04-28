@@ -8,9 +8,10 @@ https://www.codementor.io/@sagaragarwal94/building-a-basic-restful-api-in-python
 
 import json
 import logging
+import urllib
 
 import pandas as pd
-from flask import Flask
+from flask import Flask, render_template, url_for
 from flask_restful import Resource, Api
 from pi_logger import PINAME, LOG_PATH
 from pi_logger.local_db import (ENGINE, get_recent_readings,
@@ -36,7 +37,7 @@ class GetRecent(Resource):
         GetRecent API resource get function
         """
         start_datetime = pd.to_datetime(start_datetime)
-        result = get_recent_readings(start_datetime)
+        result = get_recent_readings(start_datetime, engine=ENGINE)
         if result is None:
             msg = '{"message": "query returns no results"}'
             result = json.loads(msg)
@@ -57,7 +58,7 @@ class GetLast(Resource):
         """
         GetLast API resource get function
         """
-        result = get_last_reading()
+        result = get_last_reading(engine=ENGINE)
         if result is None:
             msg = '{"message": "query returns no results"}'
             result = json.loads(msg)
@@ -87,6 +88,32 @@ class PollSensors(Resource):
         poll_all_dht22(dht_conf, dht_sensor, piid, PINAME, engine)
         poll_all_bme680(bme_conf, bme_sensor, piid, PINAME, engine)
         poll_all_mcp3008(mcp_conf, mcp_chip, piid, PINAME, engine)
+
+
+@app.route('/')
+def main_page():
+    """
+    Render the main page with a table of available API routes
+    """
+    table = pd.DataFrame()
+    for rule in app.url_map.iter_rules():
+        options = {}
+        for arg in rule.arguments:
+            options[arg] = "[{0}]".format(arg)
+
+        methods = ','.join(rule.methods)
+        url = url_for(rule.endpoint, **options)
+        url = urllib.parse.unquote(url)
+        table.loc[rule.endpoint, "Methods"] = methods
+        table.loc[rule.endpoint, "URL"] = url
+    table.index = table.index.rename("Endpoint")
+    table = table.reset_index()
+    context = dict(
+        title=f"Pi Logger: {PINAME}",
+        subtitle="Available routes:",
+        table=table.to_html(justify='left', table_id="routes", index=False),
+    )
+    return render_template('site_map.html', **context)
 
 
 api.add_resource(GetRecent, '/get_recent/<start_datetime>')
