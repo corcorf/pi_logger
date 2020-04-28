@@ -21,6 +21,9 @@ def get_local_logger_arguments():
     parser.add_argument('--debug', dest='debug', action='store_const',
                         const=True, default=False,
                         help='set the logging module to debug mode')
+    parser.add_argument('--setup_db', action='store_const',
+                        const=True, default=False,
+                        help='initilise the local database')
     return parser.parse_args()
 
 

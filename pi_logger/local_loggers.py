@@ -17,7 +17,7 @@ import adafruit_mcp3xxx.mcp3008 as MCP
 from adafruit_mcp3xxx.analog_in import AnalogIn
 
 from pi_logger import PINAME, LOG_PATH
-from pi_logger.local_db import ENGINE, save_readings_to_db
+from pi_logger.local_db import ENGINE, save_readings_to_db, set_up_database
 from pi_logger.cli import get_local_logger_arguments
 
 
@@ -272,6 +272,9 @@ if __name__ == "__main__":
     ARGS = get_local_logger_arguments()
     FREQ = ARGS.frequency
     DEBUG = ARGS.debug
+
+    if ARGS.setup_db:
+        set_up_database(LOG_PATH, ENGINE)
 
     DHT_SENSOR, DHT_CONF, BME_SENSOR, BME_CONF, MCP_CHIP, MCP_CONF = \
         initialise_sensors(pi_name=PINAME,

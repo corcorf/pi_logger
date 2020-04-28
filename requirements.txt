@@ -1,3 +1,4 @@
+RPi.GPIO
 Adafruit_DHT
 bme680
 adafruit-circuitpython-mcp3xxx
