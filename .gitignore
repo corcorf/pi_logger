@@ -110,3 +110,5 @@ logger_service_set_up_complete
 
 test.db
 scratch.ipynb
+
+logs/
