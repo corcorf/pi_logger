@@ -164,7 +164,7 @@ def poll_mcp3008(mcp_chip, pin):
     Get a reading from a sensor connected to an MCP analog-to-digital converter
     and return data as a dictionary
     """
-    time_now = datetime.now()
+    time_now = datetime.utcnow()
     LOG.info('%s polling MCP chip on pin %s',
              time_now.strftime("%Y-%m-%d %H:%M:%S"), pin)
     chan = AnalogIn(mcp_chip, getattr(MCP, f"P{pin}"))
