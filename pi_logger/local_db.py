@@ -10,6 +10,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.inspection import inspect
 
 from pi_logger import PINAME, LOG_PATH
 
@@ -131,10 +132,8 @@ def get_recent_readings(start_datetime_utc, table=LocalData, engine=ENGINE):
     query = session.query(table)\
                    .filter(table.datetime > start_datetime_utc)
     if one_or_more_results(query):
-        result = query.values(
-            "datetime", "location", "sensortype", "piname",
-            "piid", "temp", "humidity", "pressure", "gasvoc"
-        )
+        output_cols = [c.name for c in inspect(table).columns]
+        result = query.values(*output_cols)
     else:
         LOG.debug("No results from query")
         result = None
