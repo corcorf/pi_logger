@@ -11,7 +11,7 @@ then
   cat > $service_path$unit_file << EOF
 [Unit]
 Description=Run flask api server for logger data
-echo "After=multi-user.target"
+After=multi-user.target
 
 [Service]
 WorkingDirectory=$PWD
