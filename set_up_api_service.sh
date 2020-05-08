@@ -25,8 +25,8 @@ WantedBy=multi-user.target
 EOF
   echo "reloading systemd daemon and enabling service"
   systemctl daemon-reload
-  systemctl start api_server.service
-  systemctl enable api_server.service
+  systemctl start $unit_file
+  systemctl enable $unit_file
   echo "creating file 'api_service_set_up_complete as flag"
   touch api_service_set_up_complete
 fi

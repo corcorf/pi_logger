@@ -28,6 +28,7 @@ Description=Schedule reading of sensors listed in $HOME/logs/logger_config.csv
 
 [Timer]
 OnCalendar=*-*-* *:00/5:00
+Persistent=true
 Unit=$unit_file
 
 [Install]
@@ -35,8 +36,8 @@ WantedBy=multi-user.target
 EOF
   echo "reloading systemd daemon and enabling service"
   systemctl daemon-reload
-  systemctl start logger.service
-  systemctl enable logger.service
+  systemctl enable $timer_file
+  systemctl start $timer_file
   echo "creating file 'logger_service_set_up_complete as flag"
   touch logger_service_set_up_complete
 fi
