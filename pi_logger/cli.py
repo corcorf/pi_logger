@@ -15,8 +15,7 @@ def get_local_logger_arguments():
     LOG.debug("fetching arguments")
     description = 'Log ambient conditions at a specified frequency.'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--freq", dest='frequency', type=int, nargs='?',
-                        default=None, const=300,
+    parser.add_argument("--freq", dest='frequency', type=int,
                         help='Frequency of readings in seconds')
     parser.add_argument('--debug', dest='debug', action='store_const',
                         const=True, default=False,
