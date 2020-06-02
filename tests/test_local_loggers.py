@@ -25,5 +25,7 @@ def test_read_config():
     config_path = ""
     config_file = "logger_config.csv"
     sensor_dict = read_config(piname, config_path, config_file)
-    assert isinstance(sensor_dict["bme680"], pd.DataFrame)
-    assert isinstance(sensor_dict["dht22"], pd.DataFrame)
+    assert (
+        isinstance(sensor_dict["bme680"], pd.DataFrame)
+        and isinstance(sensor_dict["dht22"], pd.DataFrame)
+    )

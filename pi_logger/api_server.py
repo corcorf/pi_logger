@@ -90,6 +90,21 @@ class PollSensors(Resource):
         poll_all_mcp3008(mcp_conf, mcp_chip, piid, PINAME, engine)
 
 
+def check_api_result(result):
+    """
+    Check that the result of an API request contains a datetime and temperature
+    or else is an error message
+    Used for automated testing
+    """
+    assert isinstance(result, str)
+    converted_result = json.loads(result)
+    assert isinstance(converted_result, dict)
+    keys = converted_result.keys()
+    assert "datetime" in keys or "message" in keys
+    assert "temp" in keys or "message" in keys
+    return True
+
+
 @app.route('/')
 def main_page():
     """

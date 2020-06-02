@@ -9,15 +9,15 @@ on Travis CI
 # import pytest
 import os
 from datetime import datetime
-import json
 
+import pytest
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 
 from pi_logger.local_db import (set_up_database, save_readings_to_db,
                                 get_last_reading, get_recent_readings)
-from pi_logger.api_server import GetRecent, GetLast
+from pi_logger.api_server import GetRecent, GetLast, check_api_result
 
 BASE = declarative_base()
 TEST_DB_PATH = os.getcwd()
@@ -27,6 +27,20 @@ CONN_STRING = f'sqlite:///{TEST_DB_FILEPATH}'
 ENGINE = create_engine(CONN_STRING, echo=False)
 
 TEST_TIME = datetime.now()
+
+TEST_DATA = dict(
+    datetime=datetime.now(),
+    location="testsville",
+    sensortype="test_reading",
+    piname="testy",
+    piid="7357",
+    temp=-999.999,
+    humidity=-999.999,
+    pressure=-999.999,
+    gasvoc=-999.999,
+    mcdvalue=-999.999,
+    mcdvoltage=-999.999,
+)
 
 
 def test_create_db():
@@ -39,75 +53,31 @@ def test_save_readings():
     """
     Check that readings saved into the db actually end up there
     """
-    reading_time = datetime.now()
-    test_type = "test_reading"
-    test_val = -999.999
-    pi_id = "7357"
-    pi_name = "testy"
-    location = "testsville"
-    data = dict(
-        datetime=reading_time,
-        sensortype=test_type,
-        temp=test_val,
-        humidity=test_val,
-        pressure=test_val,
-        piid=pi_id,
-        piname=pi_name,
-        location=location,
-    )
-    save_readings_to_db(data, ENGINE)
-
+    save_readings_to_db(TEST_DATA, ENGINE)
     last_reading = get_last_reading(engine=ENGINE)
-    assert isinstance(last_reading, dict)
-    assert last_reading['datetime'] == reading_time
-    assert last_reading['sensortype'] == test_type
-    assert last_reading['temp'] == test_val
-    assert last_reading['piid'] == pi_id
-    assert last_reading['location'] == location
+    assert last_reading == TEST_DATA
 
 
 def test_recent_readings():
     """
     Check that readings saved into the db actually end up there
     """
-    reading_time = datetime.now()
-    test_type = "test_reading"
-    test_val = -999.999
-    pi_id = "7357"
-    pi_name = "testy"
-    location = "testsville"
-    data = dict(
-        datetime=reading_time,
-        sensortype=test_type,
-        temp=test_val,
-        humidity=test_val,
-        pressure=test_val,
-        piid=pi_id,
-        piname=pi_name,
-        location=location,
-    )
-    save_readings_to_db(data, ENGINE)
+    save_readings_to_db(TEST_DATA, ENGINE)
 
     recent_readings = get_recent_readings(start_datetime_utc=TEST_TIME,
                                           engine=ENGINE)
-    assert recent_readings is not None
     recent_readings = pd.DataFrame(recent_readings)
     recent_readings['datetime'] = pd.to_datetime(recent_readings['datetime'],
                                                  format="%Y-%m-%d %H:%M:%S")
-    assert reading_time in recent_readings['datetime'].to_list()
+    assert TEST_DATA['datetime'] in recent_readings['datetime'].to_list()
 
 
-def check_result(result):
+def test_check_api_result():
     """
-    Check that the result of an API request contains a datetime and temperature
-    or else is an error message
+    Test that an api result without datetime field fails check function
     """
-    assert isinstance(result, str)
-    converted_result = json.loads(result)
-    assert isinstance(converted_result, dict)
-    keys = converted_result.keys()
-    assert "datetime" in keys or "message" in keys
-    assert "temp" in keys or "message" in keys
+    result_without_datetime = ""
+    pytest.raises(AssertionError, check_api_result, result_without_datetime)
 
 
 def test_get_recent():
@@ -117,7 +87,7 @@ def test_get_recent():
     start_datetime = datetime(1970, 1, 1, 0, 0)
     route = GetRecent()
     route_result = route.get(start_datetime, engine=ENGINE)
-    check_result(route_result)
+    assert check_api_result(route_result)
 
 
 def test_get_last():
@@ -126,4 +96,4 @@ def test_get_last():
     """
     route = GetLast()
     route_result = route.get(engine=ENGINE)
-    check_result(route_result)
+    assert check_api_result(route_result)
