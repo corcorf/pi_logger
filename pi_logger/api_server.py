@@ -70,7 +70,7 @@ class GetLast(Resource):
 
 class PollSensors(Resource):
     """
-    API resource to trigger a sensor polling event
+    API resource to trigger a sensor polling event, returning the result
     """
     # pylint: disable=R0201
     def get(self):
@@ -88,6 +88,15 @@ class PollSensors(Resource):
         poll_all_dht22(dht_conf, dht_sensor, piid, PINAME, engine)
         poll_all_bme680(bme_conf, bme_sensor, piid, PINAME, engine)
         poll_all_mcp3008(mcp_conf, mcp_chip, piid, PINAME, engine)
+
+        result = get_last_reading(engine=engine)
+        if result is None:
+            msg = '{"message": "query returns no results"}'
+            result = json.loads(msg)
+        else:
+            result = pd.DataFrame(result, index=[0])
+            result = result.to_json()
+        return result
 
 
 def check_api_result(result):
